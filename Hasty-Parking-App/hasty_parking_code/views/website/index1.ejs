@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-init="userProfile();" ng-controller="signupController">
+<head>
+<meta charset="utf-8">
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<META HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hasty Parking</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/bootstrap-datetimepicker.min.css" rel="stylesheet" media="screen">
+<link href="website/css/styles-3.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link href="website/css/animate.css" rel="stylesheet">
+<script src="website/js/jquery-2.1.1.min.js"></script>
+<script src="website/js/bootstrap-datetimepicker.min.js"></script>
+<script src="website/js/bootstrap.min.js"></script>
+<script src="website/js/owl.carousel.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+<!-- Owl Carousel -->
+<link rel="stylesheet" href="website/css/owl.carousel.min.css">
+<link rel="stylesheet" href="website/css/owl.theme.default.min.css">
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/app.js"></script>
+<!--<script type="text/javascript" src="website/js/angularjs/webjs/designer/indexMain.js"></script> -->
+  <script type="text/javascript" src="website/js/angular-facebook.js"></script>
+ <script src="https://apis.google.com/js/platform.js" async defer>
+</script>
+<script src="https://apis.google.com/js/client:platform.js" async defer>
+</script>
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/dropdown.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/signup.js"></script>
+
+<script>
+    function initAutocomplete() {
+
+      var input = document.getElementById('search_loc');
+      var searchBox = new google.maps.places.SearchBox(input);
+      searchBox.addListener('places_changed', function() {
+        var places = searchBox.getPlaces();
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode( {'address': places[0].formatted_address}, function(results, status) {
+          if (status == 'OK') {
+            var lat = results[0].geometry.location.lat();
+            var lng = results[0].geometry.location.lng();
+            console.log("Latitude"+lat);
+            console.log("Longitude"+lng);
+            $('.latlng').attr("latitude",lat);
+            $('.latlng').attr("longitude",lng);         
+          }
+          else 
+          {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+        if (places.length == 0) {
+          return;
+        }
+       });
+    }
+  </script>
+
+</head>
+<body class="home">
+<header>
+	<div class="container-fluid">
+  	<nav class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Mobile Menu</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+          <a class="navbar-brand logo text-uppercase" href="/website/index"><b>Hasty</b>Parking</a> </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+       
+          <div>
+          <ul class="nav navbar-nav navbar-right">  
+            <li class="active"><a href="/website/index">Book Parking</a></li>
+            <li><a href="/website/rentspace">Rent Your Space</a></li>
+            <li><a href="/website/freeparking">Free Parking</a></li>
+           <% include ./partials/headerUserProfile %>
+          </ul>
+        </div>
+        </div>
+        <!-- /.navbar-collapse --> 
+      </nav>
+     
+    <section class="text-center container clearfix">
+      <h2 class="thin">Looking for a space?</h2>
+      <h6 class="thin">Tell us where you’re going and when</h6>
+      
+      <div class="row search-parking">
+       
+      <form method="post" novalidate name="searchForm">
+          <div class="form-group col-md-3 col-sm-3  col-xs-12">
+            <input type="text" id="search_loc" class="col-md-4 col-sm-4 col-xs-12 form-control" placeholder="Enter your destination"  ng-model="map.search_loc">
+          </div>
+           <input type="hidden" ng-model="map.lat" name="lat" id="lat" >
+          <input type="hidden" ng-model="map.lng" name="lng" id="lng" value=""/>
+     	    <div class="form-group col-md-3 col-sm-3  col-xs-12">
+            <div class="input-group date form_datetime" data-date-format="dd MM yyyy - HH:ii p" data-link-field="sdt">
+                <input class="form-control" size="10" type="text" value=""  name ="startTime" id ="startTime" readonly placeholder="Start Date & Time">
+                <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+            </div>
+            <input type="hidden" id="sdt" value="" ng-model="map.startTime" />
+          </div>
+		  		<div class="form-group col-md-3 col-sm-3 col-xs-12">
+            <div class="input-group date form_datetime" data-date-format="dd MM yyyy - HH:ii p" data-link-field="edt">
+                <input class="form-control" size="10" type="text" value="" name="endTime"  id="endTime"   readonly placeholder="End Date & Time">
+                <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+            </div>
+            <input type="hidden" id="edt" value="" ng-model="map.endTime"/>
+          </div>
+           <!-- <input type="button" latitude ="" longitude = "" st="" et="" ng-click="searchInput(searchForm.$valid,$event)" ng-click="spacedetails();" class="col-md-2 col-sm-2  col-xs-12 btn btn-green latlng "  placeholder="Search"> -->
+           
+           <input type="button" latitude="" longitude="" st="" et="" ng-click="searchInput(searchForm.$valid,$event)" ng-click="spacedetails();" class="col-md-3 col-sm-3  col-xs-12 btn btn-green pull-right latlng " placeholder="Search" value="Search">
+        </form>
+        </div>
+      </div><!-- /input-group -->
+      
+    </section>
+    <section class="container download-btn">
+      <div class="col-md-6 col-sm-6 col-xs-12 text-right"><a href="#"><img class="" src="website/img/appstore.png" alt="appStore"></a></div>
+        <div class="col-md-6 col-sm-6 col-xs-12 text-left"><a href="#"><img class="" src="website/img/playstore.png" alt="playStore"></a></div>
+    </section>
+  </div>
+</header>
+<section class="features">
+  <div class="container animatedParent">
+    <div class="col-md-4 text-center icon-item animated fadeInUp go">
+      <div class="icon">
+        <img class="text-center" src="website/img/icon-search.png" alt="Search">
+        <h3 class="light green">Search</h3>
+      </div>
+      <div class="icon-cont">
+        <p>Park for an hourly, daily, weekly, monthly or extend it to a year.</p>
+      </div>
+    </div>
+    <div class="col-md-4 text-center icon-item animated fadeInUp go">
+      <div class="icon">
+        <img class="" src="website/img/icon-reserve.png" alt="Search">
+        <h3 class="light green">Reserve</h3>
+      </div>
+      <div class="icon-cont">
+        <p>Select & pay for your space conveniently, using your mobile device</p>
+      </div>
+    </div>
+    <div class="col-md-4 text-center icon-item animated fadeInUp go">
+      <div class="icon">
+        <img class="text-center" src="website/img/icon-share.png" alt="Search">
+        <h3 class="light green">Park</h3>
+      </div>
+      <div class="icon-cont">
+        <p>Our Space ID Markers make finding your space quick... <a data-toggle="modal" data-target="#park" style="cursor:pointer">Readmore</a></p>
+      </div>
+    </div>
+    <div class="modal fade" id="park" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" style="z-index:1050">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Park</h4>
+          </div>
+        </div>
+        <div class="modal-body">
+          Our Space ID Markers make finding your space quick and hassle free.  Your real-time reservation confirmation will include your space ID code so you can be confident you’re in the correct space, every time!
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="place animatedParent">
+  <div class="container text-center animated growIn go">
+    <h2 class="light">Got a space to rent?</h2>
+    <h6 class="light">Register your space today and start earning money now...</h6>
+    <a href="/website/rentspace" class="btn btn-green">Get Started</a>
+  </div>
+</section>
+<div class="container">
+  <div class="feedback">
+    <div class="clearfix">
+      <div class="col-md-4 feedback-quote"><img class="" src="website/img/quote.png" alt=""></div>
+      <div class="col-md-8">
+        <h3 class="bottom30">Customer Feedback</h3>
+        <div class="owl-carousel owl-theme">
+          <div class="feedback-itm clearfix item">
+            <p>“Fantastic concept & really well done. Thank you! A great experience that I will recommend to others.”</p>
+            <div class="client">
+              <div class="client-img"><img class="img-responsive" src="website/img/feedback1.png"></div>
+              <div class="client-name"><h4 class="light">Paula Harringan,<small>Parking Expert</small></h4></div>
+            </div>
+          </div>
+          <div class="feedback-itm clearfix item">
+            <p>“Fantastic concept & really well done. Thank you! A great experience that I will recommend to others.”</p>
+            <div class="client">
+              <div class="client-img"><img class="img-responsive" src="website/img/feedback2.png"></div>
+                <div class="client-name"><h4 class="light">Paula Harringan,<small>Parking Expert</small></h4></div>
+            </div>
+          </div>
+          <div class="feedback-itm clearfix item">
+            <p>“Fantastic concept & really well done. Thank you! A great experience that I will   recommend to others.”</p>
+            <div class="client">
+              <div class="client-img"><img class="img-responsive" src="website/img/feedback3.png"></div>
+              <div class="client-name"><h4 class="light">Paula Harringan,<small>Parking Expert</small></h4></div>
+            </div>
+          </div>
+          <div class="feedback-itm clearfix item">
+            <p>“Fantastic concept & really well done. Thank you! A great experience that I will   recommend to others.”</p>
+            <div class="client">
+              <div class="client-img"><img class="img-responsive" src="website/img/feedback4.png"></div>
+              <div class="client-name"><h4 class="light">Paula Harringan,<small>Parking Expert</small></h4></div>
+            </div>
+          </div>
+          <div class="feedback-itm clearfix item">
+            <p>“Fantastic concept & really well done. Thank you! A great experience that I will recommend to others.”</p>
+            <div class="client">
+              <div class="client-img"><img class="img-responsive" src="website/img/feedback1.png"></div>
+              <div class="client-name"><h4 class="light">Paula Harringan,<small>Parking Expert</small> </h4></div>
+            </div>
+          </div>
+        </div>
+        <p><a href="/website/freeparking" class="btn btn-green text-uppercase">View all</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="appstore animatedParent">
+  <div class="container text-center animated growIn go">
+    <h2 class="light">YOUR No.1 PARKING ASSISTANT</h2>
+    <h5 class="light">DOWNLOAD NOW FOR FREE</h5>
+    <div class="col-md-6 col-sm-6 col-xs-12 text-right"><a href="/website/freeparking"><img class="" src="website/img/appstore.png" alt="appStore"></a></div>
+    <div class="col-md-6 col-sm-6 col-xs-12 text-left"><a href="/website/freeparking"><img class="" src="website/img/playstore.png" alt="playStore"></a></div>
+  </div>
+</div>
+<section class="features1 container animatedParent">
+  <div class="col-md-4 spl-item text-center animated fadeInUp go">
+    <div class="spl-img"><img class="" src="website/img/feature-img1.png" alt=""></div>
+    <div class="spl-cont">
+      <h3 class="light">Free Parking</h3>
+      <p>Enter promo-code, do next parking for free</p>
+    </div>
+  </div>
+  <div class="col-md-4 text-center spl-item animated fadeInUp go">
+    <div class="spl-img"><img class="" src="website/img/feature-img2.png" alt=""></div>
+    <div class="spl-cont">
+      <h3 class="light">Share</h3>
+      <p>Share your code with friends get $10 in credits</p>
+    </div>
+  </div>
+  <div class="col-md-4 text-center spl-item animated fadeInUp go">
+    <div class="spl-img"><img class="" src="website/img/feature-img3.png" alt=""></div>
+    <div class="spl-cont">
+      <h3 class="light">For Space Owners</h3>
+      <p>Secure & Seamless earning tranfer to Bank accounts</p>
+    </div>
+  </div>
+</section>
+<!-- Footer File Import Link -->
+<% include ./partials/footer %>
+<!-- Footer Ends -->
+
+<!-- Bootstrap -->
+
+<script type="text/javascript">
+  $('#startTime').change(function(){
+        var st = $("#sdt").val();
+        console.log(st);
+        $(".latlng").attr("st",st);
+    });
+    $('#endTime').change(function(){
+        var et = $("#edt").val();
+        $(".latlng").attr("et",et);
+    });
+    
+    $(".form_datetime").datetimepicker({
+        weekStart: 1,
+        autoclose: 1,
+        startDate: new Date(),
+        todayHighlight: 1,
+        startView: 2,
+        forceParse: 0,
+        showMeridian: 1
+    })
+  $('.owl-carousel').owlCarousel({
+    loop:true,
+    margin:10,
+    nav:true,
+    items:1,
+    dots:0,
+  })
+  $(window).bind("pageshow", function() {
+    $("#startTime").val('');
+    $("#endTime").val('');
+});
+</script>
+<!-- <script type="text/javascript">
+  // Get today's date
+// $(function () {
+
+//                  $('#datetimepicker').datetimepicker({  minDate:new Date()});
+//            });
+// </script -->
+<script src="website/js/css3-animate-it.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyClBSroLa7RsLQh5eYmLrzGhxS3vLniS0o&libraries=places&callback=initAutocomplete"
+ async defer></script>
+<script src="website/js/css3-animate-it.js"></script>
+</body>
+</html>

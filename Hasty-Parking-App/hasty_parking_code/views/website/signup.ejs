@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en" data-ng-app="app" ng-controller="signupController">
+<head>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<META HTTP-EQUIV="Expires" CONTENT="-1">
+<meta charset="utf-8">
+<meta name="google-signin-client_id" content="679066686193-rc42ioct0vf22e2hujn4k7jhj850k7bv.apps.googleusercontent.com">
+<title>Hasty Parking | Details page</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/bootstrap-datetimepicker.min.css" rel="stylesheet" media="screen">
+<link href="website/css/styles-3.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<script type="text/javascript" src="website/js/angular-facebook.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/signup.js"></script>
+<script src="https://apis.google.com/js/platform.js" async defer>
+</script>
+<script src="https://apis.google.com/js/client:platform.js" async defer>
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular.min.js"></script>
+<script src = "//connect.facebook.net/en_US/sdk.js"></script>
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+</head>
+<body>
+<!-- Header File import. When user is not Logged In  -->
+<% include ./partials/headerLogin %>
+<!-- Header Ends -->
+</header>
+<div class="container">
+  <form name="signupForm" ng-submit="signUp(signupForm.$valid)" method="post">
+    <div class="card clearfix">
+      <div class="card-title">
+        <h3 class="head text-uppercase">Create your account</h3>
+      </div>
+      <div class="col-sm-12">
+        <div class="form-group col-sm-6">
+          <label class="control-label requiredField" for="fname">First Name<span class="asteriskField">* </span> </label>
+          <input class="form-control" ng-pattern="/^[a-zA-Z]*$/" required id="fname" ng-model="reg.fname" name="fname" type="text"/>
+          <p style="color:red;" ng-show="(signupForm.fname.$invalid && !signupForm.fname.$pristine) || (signupForm.fname.$invalid && signupForm.fname.$touched)">This field is Mandatory</p>
+          <span class="help-block" style="color:red"  ng-show="signupForm.fname.$error.pattern && signupForm.fname.$invalid">*First Name should contains only Alphabets and no Space.</span>
+        </div>
+        
+        <div class="form-group col-sm-6">
+          <label class="control-label requiredField" for="lname">Last Name<span class="asteriskField">* </span> </label>
+          <input class="form-control" required ng-pattern="/^[a-zA-Z]*$/" id="lname" value="" ng-model="reg.lname" name="lname" type="text"/><p style="color:red;" ng-show="(signupForm.lname.$invalid && !signupForm.lname.$pristine) || (signupForm.lname.$invalid && signupForm.lname.$touched)">This field is Mandatory</p>
+          <span class="help-block" style="color:red"  ng-show="signupForm.lname.$error.pattern && signupForm.lname.$invalid">*Last Name should contains only Alphabets and no spaces.</span>
+        </div>
+      </div>
+
+      <div class="col-sm-12">
+        <div class="form-group col-sm-6">
+          <label class="control-label requiredField" for="phone">Phone Number<span class="asteriskField">* </span> </label>
+          <input class="form-control" required id="phone_number" ng-pattern="/^[0-9]{10,10}$/" ng-model="reg.phone_number" name="phone_number" type="text"/>
+          <div class="error-msg" ng-show="signupForm.$submitted || signupForm.phone_number.$touched">
+                              <p style="color:red;" ng-show="signupForm.phone_number.$error.required">*This field is mandatory</p>
+                              <p style="color:red;" ng-show="signupForm.phone_number.$error.pattern">Enter valid Phone Number</p>
+                              </div>
+        </div>
+
+        <div class="form-group col-sm-6">
+          <label class="control-label requiredField" for="email">Email ID<span class="asteriskField">* </span> </label>
+          <input class="form-control" id="email" required ng-model="reg.email" name="email" type="email"/>
+          <div class="error-msg" ng-show="signupForm.$submitted || signupForm.email.$touched">
+          <p style="color:red;" ng-show="signupForm.email.$error.required">*This field is mandatory</p>
+          <p style="color:red;" ng-show="(signupForm.email.$invalid && !signupForm.email.$pristine) || (signupForm.email.$touched && signupForm.email.$invalid )" class="help-block">Enter a valid email.</p>
+        </div>
+      </div>
+
+      <div class="col-sm-12">
+        <div class="form-group col-sm-6" ng-class="{ 'has-error' : signupForm.password.$dirty && signupForm.password.$invalid }">
+          <label class="control-label requiredField" for="password">password<span class="asteriskField">* </span></label>
+          <input class="form-control" required id="password" ng-model="reg.password" name="password" type="password" password-verify="{{reg.c_password}}"/>
+          
+          <div class="help-block" ng-messages="signupForm.password.$error" ng-if="signupForm.password.$dirty">  <p style="color:red;" ng-show="signupForm.password.$error.required">*This field is mandatory</p>
+          <p style="color:red;" ng-show="required">This field is required</p>
+          <p style="color:red;" ng-show="passwordVerify">No match!</p>
+         </div>        
+         </div>
+         </div>
+         
+        <div class="col-sm-12">
+        <div class="form-group col-sm-6" ng-class="{ 'has-error' : signupForm.c_password.$dirty && signupForm.c_password.$invalid }">
+          <label class="control-label requiredField" for="c_password">Confirm Password<span class="asteriskField">* </span></label>
+          <input class="form-control" required id="c_password" ng-model="reg.c_password" name="c_password" type="password" password-verify="{{reg.password}}"/>
+         
+          <div class="help-block" ng-messages="signupForm.c_password.$error" ng-if="signupForm.c_password.$dirty">         
+           <p style="color:red;" ng-show="signupForm.c_password.$error.required">*This field is mandatory</p>
+          <p style="color:red;" ng-show="required">This field is required</p>
+          <p style="color:red;" ng-show="passwordVerify">No match!</p>
+        </div>
+        </div>
+      </div>
+      <section>
+      <div class="socialButtons">
+                <button type="button" id="login" ng-click="login()" style="width:50%"  class="btn btn-block btn-social btn-md btn-facebook"><i class="fa fa-facebook"></i>Facebook</button>
+                          <google-sign-in-button on-sign-in="onSignIn(response)" g-client-id="679066686193-rc42ioct0vf22e2hujn4k7jhj850k7bv.apps.googleusercontent.com"></google-sign-in-button><br /> 
+                       <!--   <google-sign-in-button on-sign-in="onSignIn(response)" g-client-id="679066686193-rc42ioct0vf22e2hujn4k7jhj850k7bv.apps.googleusercontent.com"></google-sign-in-button>
+
+    <input type="button" id="login" ng-click="login()" value="SignUp using Faceboook">-->
+                        </div>
+</section>
+      <div class="col-sm-12">
+        <div class="form-group col-sm-12">
+          <div class="checkbox">
+<label class="checkbox-inline" for="terms">
+          <input type="checkbox" name="terms" required  ng-model="reg.terms" id="terms" value="yes">          
+         By registering you agree to <a href="#">Terms and conditions</a>and <a href="#">privacy policy</a></label>
+            <span class="help-block" style="color: red" ng-show="signupForm.terms.$touched && signupForm.terms.$invalid">*You didn't Accept the Terms and Conditions of Hasty parking</span>
+           </div>
+        </div>
+        <div class="form-group col-sm-12 text-right">
+            <input type="submit" class="btn btn-primary" value="Sign Up">
+        </div>
+      </div>
+    </div>
+</div>
+</form>
+<!-- Footer File Import Link -->
+<% include ./partials/footer %>
+<!-- Footer Ends -->
+<!-- Bootstrap --> 
+<script src="website/js/jquery-2.1.1.min.js"></script> 
+<script src="website/js/bootstrap-datetimepicker.min.js"></script> 
+<script src="website/js/bootstrap.min.js"></script> 
+<script src="website/js/lightbox-plus-jquery.min.js"></script> 
+</script>
+</body>
+</html>

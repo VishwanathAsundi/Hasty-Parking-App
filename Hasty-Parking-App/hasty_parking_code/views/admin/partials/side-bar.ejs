@@ -1,0 +1,27 @@
+<aside class="main-sidebar"> 
+    <!-- sidebar: style can be found in sidebar.less -->
+    <section class="sidebar"> 
+      <!-- Sidebar user panel -->
+      <div class="user-panel">
+        <div class="pull-left image"> <img src="admin/img/user-160x160.jpg" class="img-circle" alt="User Image"> </div>
+        <div class="pull-left info">
+          <p>Alexander Pierce</p>
+          <a href="index.ejs" class="btn btn-block btn-danger btn-xs">Sign out </a> </div>
+      </div>
+      <!-- sidebar menu: : style can be found in sidebar.less -->
+       <ul class="sidebar-menu">
+        <li class="header">MAIN NAVIGATION</li>
+        <li class="active"> <a href="/admin/userList"> <i class="fa fa-users"></i> <span>Users</span> </a> </li>
+        <li class="treeview"> <a href="#"> <i class="fa fa-files-o"></i> <span>Verification Request</span> <span class="pull-right-container"> <span class="fa fa-angle-left pull-right"></span> </span> </a>
+          <ul class="treeview-menu">
+            <li><a href="/admin/verifyNew"><i class="fa fa-circle-o"></i> New</a></li>
+            <li><a href="/admin/onProgress"><i class="fa fa-circle-o"></i> On Progress</a></li>
+            <li><a href="/admin/verifyList"><i class="fa fa-circle-o"></i> Approved List</a></li>
+            <li><a href="/admin/rejectedList"><i class="fa fa-circle-o"></i> Rejected List</a></li>
+          </ul>
+        </li>
+        <li> <a href="/admin/violationList"> <i class="fa fa-edit"></i> <span>Violation</span> </a> </li>
+      </ul>
+    </section>
+    <!-- /.sidebar --> 
+  </aside>

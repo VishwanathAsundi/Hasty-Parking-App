@@ -1,0 +1,502 @@
+ <!doctype html>
+<html lang="en" ng-app="app" ng-controller="bookingDetails" ng-init="bookingdetail();">
+<head>
+<meta charset="utf-8">
+<title>Hasty Parking | Booked Details Page</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/bootstrap-datetimepicker.min.css" rel="stylesheet" media="screen">
+<link href="website/css/styles.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="website/css/lightbox.min.css">
+<link rel="stylesheet" href="website/css/owl.carousel.min.css">
+<link rel="stylesheet" href="website/css/owl.theme.default.min.css">
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/app.js"></script>
+<!-- <script type="text/javascript" src="website/js/angularjs/webjs/designer/bookingdetails.js"></script> -->
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/dropdown.js"></script>
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+<script>
+
+ function myMap() 
+    {
+      app.controller('bookingDetails',['$scope','$http',function($scope,$http){
+  
+      $scope.bookingdetail = function(req,res){
+       $http({
+                method  : 'POST',
+                url     : __appurl + "website/spacehistorydetails",
+                data    : {status:"1"},
+                headers : { 'Content-Type': 'application/json' }  
+            })
+            .success(function(data) { 
+              if(data.status){
+              
+                console.log(data.Searched_details[0].title);
+               $scope.getdetails = data.Searched_details[0];
+               $scope.startdate = data.startdate;
+               $scope.enddate = data.enddate;
+               $scope.totalhours = data.duration;
+               $scope.totalamount = data.amount;
+               console.log('duration-->'+$scope.totalhours+' totalamount'+$scope.totalamount);
+
+               console.log('get details-->'+$scope.getdetails.title);
+               console.log($scope.startdate);
+               console.log($scope.enddate);
+           
+              var map;
+              var bounds = new google.maps.LatLngBounds();
+              var mapOptions = {
+                  mapTypeId: 'roadmap'
+              };
+                        
+              map = new google.maps.Map(document.getElementById("googleMap"), mapOptions);
+              map.setTilt(50);
+        
+              var infoWindow = new google.maps.InfoWindow(), marker;
+            
+                  var pinIcon = new google.maps.MarkerImage(
+                  "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|FF0000",
+                  null, /* size is determined at runtime */
+                  null, /* origin is 0,0 */
+                  null, /* anchor is bottom center of the scaled image */
+                  new google.maps.Size(40, 60)
+                  ); 
+
+
+                var position = new google.maps.LatLng(data.Searched_details[0].latlong[0],data.Searched_details[0].latlong[1]);
+                bounds.extend(position);
+                marker = new google.maps.Marker({
+                  position: position,
+                  map: map
+                });
+              
+                // Add info window to marker    
+                google.maps.event.addListener(marker, 'click', (function(marker) {
+                    return function() {
+                        
+                        infoWindow.open(map, marker);
+                    }
+                })(marker));
+
+                // Center the map to fit all markers on the screen
+                map.fitBounds(bounds);
+              
+
+              // Set zoom level
+              var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+                  this.setZoom(18);
+                  google.maps.event.removeListener(boundsListener);
+              })
+            
+           
+          }
+          else
+          {
+              notif({
+                      type: "success",
+                      msg: data.message,
+                      position: "right"
+                    });
+                    console.log("false");
+          }
+           });
+        },
+
+      $scope.cancelbooking = function(orderid)
+      {
+        
+        var token = localStorage.getItem("token"); 
+      console.log(" cancel booking Token"+token);
+      
+        $http({
+                method  : 'POST',
+                url     : __appurl + "website/cancelbooking",
+                data    : {token:token},
+                headers : { 'Content-Type': 'application/json' }  
+            })
+            .success(function(data) { 
+                console.log(data);
+                if(data.status){
+                 notif({
+                      type: "success",
+                      msg: data.message,
+                      position: "right"
+                    }); 
+                }
+                else
+                {
+                   notif({
+                      type: "success",
+                      msg: data.message,
+                      position: "right"
+                    });
+                }
+                
+                           
+
+            });
+
+  },
+  $scope.confirmcancel=function()
+  { 
+      var token = localStorage.getItem("token"); 
+      console.log(" cancel booking Token"+token);
+
+       $http({
+                method  : 'POST',
+                url     : __appurl + "website/confirmcancel",
+                data    : {token:token},
+                headers : { 'Content-Type': 'application/json' }  
+            })
+            .success(function(data) { 
+                console.log(data);
+                if(data.status){
+                 notif({
+                      type: "success",
+                      msg: data.message,
+                      position: "right"
+                    }); 
+                  window.location.href="profile";
+                }
+                else
+                {
+                   notif({
+                      type: "success",
+                      msg: data.message,
+                      position: "right"
+                    });
+                }
+                
+                           
+
+            });
+
+
+  },
+  $scope.extendbooking = function(final)
+  {
+     var end = $(final.currentTarget).attr('et');
+    console.log('end date->'+end);    
+    $http({
+        method  : 'POST',
+        url     : __appurl + "website/getOrderId",
+    })
+    .success(function(data){
+        console.log(end);
+        console.log(data);
+        var orderId = data.orderId;
+        var EndDate = end.substring(0,10);
+        var EndDate1 = [];
+        EndDate1[2] = EndDate[0] + EndDate[1] + EndDate[2] + EndDate[3];
+        EndDate1[1] = EndDate[5] + EndDate[6];
+        EndDate1[0] = EndDate[8] + EndDate[9];
+
+
+        var token = localStorage.getItem("token"); 
+      console.log(" extend booking Token"+token);
+        // var EndDate1 = [EndDate[2],EndDate[1],EndDate[0]];
+        EndDate = EndDate1[0] + '-' + EndDate1[1] + '-' + EndDate1[2];
+        var EndTime = end.substring(11,19);
+        console.log('new enddate '+EndDate+'endtime'+EndTime+' orderid'+orderId);
+        $http({
+               method  : 'POST',
+                url     : __appurl + "website/extendBooking",
+                data    : {token:token,OrderId:orderId,end:end},
+                headers : { 'Content-Type': 'application/json' }  
+        })
+        .success(function(data){
+          if(data.status){
+            console.log("Status"+data.status)
+            console.log(data);
+            
+             notif({
+                      type: "success",
+                      msg: data.message,
+                      position: "right"
+                    });
+             window.location.href="extend_booking_payment";
+          }
+          else
+          {
+             notif({
+                      type: "success",
+                      msg: data.message,
+                      position: "right"
+                    });
+                    console.log("false");
+          }
+        })
+    })
+ 
+  },
+  $scope.signout = function(){
+
+        $http({
+                method  : 'POST',
+                url     : __appurl + "website/user_logout",
+                data    : {status:"1"},
+                headers : { 'Content-Type': 'application/json' }  
+            })
+            .success(function(data) {
+              if(data.status){
+                window.location.href = 'login'
+              }
+              else
+              {
+                 notif({
+                      type: "success",
+                      msg: data.message,
+                      position: "right"
+                    });
+                    console.log("false");                
+              }
+            })
+            .error( function (data){
+               console.log(data) ;
+            });
+
+    }         
+  
+        }]);
+          
+    }
+            
+  
+</script>
+
+</head>
+
+<body>
+<header>
+ <div class="container-fluid">
+    <div class="col-md-12">
+      <nav class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Mobile Menu</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+          <a class="navbar-brand logo text-uppercase" href="/website/index"><b>Hasty</b>Parking</a> </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right" ng-controller="dropdown_ctrl">  
+            <li><a href="/website/index">Book Parking</a></li>
+            <li><a href="/website/rentspace">Rent Your Space</a></li>
+            <li><a href="/website/freeparking">Free Parking</a></li>
+            <% include ./partials/headerUserProfile %>
+          </ul>
+        </div>
+        <!-- /.navbar-collapse --> 
+      </nav>
+    </div>
+  </div>
+</header>
+<ul class="sub-menu">
+<li><a href="/website/rentspace">Add Spaces</a></li>
+  <li><a href="/website/myspacelist">My Spaces</a></li>
+  <li><a href="/website/receivedbookings">Received Booking</a></li>
+  <li class="active"><a href="/website/mybooking">My Booking</a></li>
+</ul>
+<div class="container-fluid">
+  <h3>{{getdetails.title}}</h3>
+  <p class="text-muted">{{getdetails.location}}</p>
+<div id="googleMap" style="width:100%;height:200px;"></div>
+  
+  <div class="row">
+    <div class="col-sm-8">
+      <div class="card">
+        <div class="card-block">
+          <h4 class="card-title">Summary</h4>
+          <div class="col-sm-3">
+            <div class="panel panel-success">
+              <div class="panel-heading"><strong>Parking</strong></div>
+              <div class="panel-body"> {{getdetails.parking_type}}</div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-warning">
+              <div class="panel-heading"><strong>Aminities</strong></div>
+              <div class="panel-body">{{getdetails.amenties}}</div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-info">
+              <div class="panel-heading"><strong>Type</strong></div>
+              <div class="panel-body"> {{getdetails.Type}} </div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-danger">
+              <div class="panel-heading"><strong>Space</strong></div>
+              <div class="panel-body">{{getdetails.space_type}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-block">
+          <h4 class="card-title">Description</h4>
+          <p>{{getdetails.description}}</p>
+        </div>
+      </div>
+      <div class="card gallery">
+        <div class="card-block">
+          <h4 class="card-title">Gallery</h4>
+          <div class="owl-carousel owl-theme">
+            <div class="item">
+              <a href="/website/img/gallery/large/1.jpg" data-lightbox="example-set" class=""><img class="img-responsive" src="website/img/gallery/1.png" alt=""/></a>
+            </div>
+            <div class="item">
+              <a href="/website/img/gallery/large/1.jpg" data-lightbox="example-set"><img class="img-responsive" src="website/img/gallery/1.png" alt=""/></a>
+            </div>
+            <div class="item">
+              <a href="/website/img/gallery/large/1.jpg" data-lightbox="example-set"><img class="img-responsive" src="website/img/gallery/1.png" alt=""/></a>
+            </div>
+            <div class="item">
+              <a href="/website/img/gallery/large/1.jpg" data-lightbox="example-set"><img class="img-responsive" src="website/img/gallery/1.png" alt=""/></a>
+            </div>
+            <div class="item">
+              <a href="/website/img/gallery/large/1.jpg" data-lightbox="example-set"><img class="img-responsive" src="website/img/gallery/1.png" alt=""/></a>
+            </div>
+            <div class="item">
+              <a href="/website/img/gallery/large/1.jpg" data-lightbox="example-set"><img class="img-responsive" src="website/img/gallery/1.png" alt=""/></a>
+            </div>
+          </div>
+           
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="card reserv-details">
+        <div class="card-block">
+          <h4 class="card-title bg-primary text-center radius">Reservation Details</h4>
+          <ul class="list-group">
+            <li class="list-group-item"> From<span class="pull-right">{{startdate}}</span> </li>
+            <li class="list-group-item"> To<span class="pull-right">{{enddate}}</span> </li>
+           </li>
+            <li class="list-group-item"> Price<span class="pull-right"><i class="fa fa-dollar"></i> {{totalamount}}</span> </li>
+              <div id="date-change-form" style="display:none">
+              <li class="list-group-item">
+                <div class="form-group">
+                  <label for="sdt">Extend Date and Time</label>
+                  <div class="input-group date form_datetime" data-date="2017-03-01T05:00:07Z" data-date-format="dd MM yyyy - HH:ii p" data-link-field="sdt">
+                    <input class="form-control" size="10" id="newEndDate" type="text" value="" readonly placeholder="dd:mm:yy - hh:mm: p">
+                    <span class="input-group-addon"><i class="fa fa-calendar"></i></span> </div>
+                  <input type="hidden" id="sdt" value="" />
+                </div>
+              </li>
+              <li class="list-group-item">
+                <h4 class="price">Total Price: <span><i class="fa fa-dollar"></i> 00.00</span></h4>
+              </li>
+            </div>
+            <li class="list-group-item text-center"> 
+            <a id="confirm" et="" ng-click="extendbooking($event);" class="change-date btn btn-block btn-success final" style="display: none;">Extend Booking</a> 
+            <a id="event" class="change-date btn btn-block btn-success">Extend Booking</a>
+            <a data-toggle="modal" data-target="#cancel-booking" ng-click="cancelbooking(getdetails[0]._id);" class="btn btn-block btn-success"">Cancel Booking
+            </a> </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  <!-- Modal -->
+<div class="modal fade" id="cancel-booking" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-body">
+        <table class="table table-responsive">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Space Location</th>
+              <th>Parking Start Date</th>
+              <th>Parking End Date</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">1</th>
+              <td>{{getdetails.title}},{{getdetails.location}}</td>
+              <td>{{startdate}}</td>
+              <td>{{enddate}}</td>
+              <td>${{totalamount}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger" ng-click="confirmcancel();">Cancel Booking</button>
+      </div>
+    </div>
+    
+  </div>
+</div>
+<!-- Footer File Import Link -->
+<% include ./partials/footer %>
+<!-- Footer Ends -->
+<!-- Bootstrap --> 
+<script src="website/js/jquery-2.1.1.min.js"></script> 
+<script src="website/js/lightbox-plus-jquery.min.js"></script> 
+<script src="website/js/bootstrap-datetimepicker.min.js"></script> 
+<script src="website/js/bootstrap.min.js"></script> 
+<script src="website/js/owl.carousel.min.js"></script>
+<script type="text/javascript">
+	$('.form_datetime').datetimepicker({
+		weekStart: 1,
+		autoclose: 1,
+		todayHighlight: 1,
+    startDate: new Date(),
+		startView: 2,
+		forceParse: 0,
+		showMeridian: 1
+	});
+</script>
+<script type="text/javascript">
+$("#newEndDate").change(function(){
+  $("#confirm").show();
+  $("#event").hide();
+  var temp = $("#sdt").val();
+  $(".final").attr("et",temp);
+});
+  $('.change-date').click(function(){
+    $('#date-change-form').slideDown("slow");
+  });
+	$('.change-date').click(function(){
+		$('#date-change-form').slideDown("slow");
+	});
+	$('.owl-carousel').owlCarousel({
+    loop:true,
+    margin:10,
+    responsiveClass:true,
+		dots:0,
+    responsive:{
+        0:{
+            items:1,
+            nav:true
+        },
+        600:{
+            items:3,
+            nav:false
+        },
+        1000:{
+            items:5,
+            nav:true,
+            loop:false
+        }
+    }
+})
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6UApfqVf745fpHBgqQTbie7m9GaYqX-I&callback=myMap&libraries=places"></script>
+</body>
+</html>
+
+
+asass
+ddasf
+sdfsdf
+sdfsdf
+sdgsdg

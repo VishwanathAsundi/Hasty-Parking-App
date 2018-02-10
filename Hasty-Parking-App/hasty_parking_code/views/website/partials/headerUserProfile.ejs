@@ -1,0 +1,25 @@
+<li class="dropdown"> <a href="#" class="dropdown-toggle" data-toggle="dropdown"> <i class="fa fa-user" style="margin-right:5px;"></i> {{datas.f_name}}<span class="glyphicon glyphicon-chevron-down"></span> </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <div class="navbar-login">
+                    <div class="row">
+                      <div class="col-lg-4">
+                        <p class="text-center"> <span class="glyphicon glyphicon-user icon-size"></span> </p>
+                      </div>
+                      <div class="col-lg-8">
+                        <p class="text-left"><strong>{{datas.f_name}} {{datas.l_name}}</strong></p>
+                        <p class="text-left small">{{datas.email}}</p>
+                        <p class="text-left"> <a href="/website/profile" class="btn btn-primary btn-block btn-sm">Profile</a> </p>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+            <li class="divider navbar-login-session-bg"></li>
+                            <li><a href="#">walletAmount     {{datas.wallet}}</span></a>
+                            </li>
+                <li><a href="resetpassword">resetpassword<span class="glyphicon glyphicon-cog pull-right"></span></a></li>
+                <li class="divider"></li>
+                <li><a href="mybooking">Bookings <span class="glyphicon glyphicon-stats pull-right"></span></a></li>
+                <li><a href="#" ng-click="signout();">Sign Out <span class="glyphicon glyphicon-log-out pull-right"></span></a></li>
+              </ul>
+            </li>

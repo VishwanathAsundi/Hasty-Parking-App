@@ -1,0 +1,1845 @@
+	var mongoose = require('mongoose');
+	//For send sms (OTP to phone)
+	var twilio = require('twilio');
+	var accountSid = 'AC43abc6d3eaee2631feb4a1d506b2f5b2'; // Your Account SID from www.twilio.com/console
+	var authToken = 'bccfa1762498c77f8cd28297cbe1f0d7';   // Your Auth Token from www.twilio.com/console
+	var coupon = require('coupon');
+	var createCoupon = require('coupon-code');
+
+	// Find your account sid and auth token in your Twilio account Console.
+	var client = twilio(accountSid, authToken);
+
+	// Db credentials
+	
+	mongoose.createConnection('mongodb://localhost:27017/hasty_parking');
+
+	//DB Schema's
+	var user = require('../models/signup.js');
+	var add_space = require('../models/add_space_rent.js');
+	var cardDtls = require('../models/carddetails.js');
+	var vehicleDtls = require('../models/vehicleDetails.js');
+	var locationschema = require('../models/locationschema.js');
+	var violator_dtls = require('../models/violator.js');
+	var order = require('../models/order.js');
+	var promo = require('../models/promo.js');
+	var user_promo = require('../models/user_promo.js');
+	var bankDtls = require('../models/bankdetails.js');
+	//Encrytion
+	var key = "$h%^&a!@s&^45*t%$^&*y";
+	var encryptor = require('simple-encryptor')(key);
+
+	//JWT token
+	var jwt = require('jsonwebtoken');
+
+	//File System
+	var fs = require('fs');
+
+	//var ObjectId = require('mongoose').Types.ObjectId; 
+
+	// Image Upload Module
+	var multer = require('multer');
+	var storage = multer.diskStorage({ //multers disk storage settings
+		destination: function (req, file, cb) {
+			cb(null, './public/images/user_images');
+		},
+		filename: function (req, file, cb) {
+			var datetimestamp = Date.now();
+			cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1]);
+		}
+	});
+	var violatorCar = multer.diskStorage({
+		destination: function (req, file, cb) {
+			cb(null, './public/images/violator_car');
+		},
+		filename: function (req, file, cb) {
+			var datetimestamp = Date.now();
+			cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1]);
+		}
+	});
+
+	var location_images = multer.diskStorage({ //multers disk storage settings
+		destination: function (req, file, cb) {
+			cb(null, './public/images/location_images');
+		},
+		filename: function (req, file, cb) {
+			var datetimestamp = Date.now();
+			cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1]);
+		}
+	});
+
+	var carUpload = multer({storage: violatorCar}).single('file');
+	var upload = multer({ storage: storage}).single('file');
+	var loc_upload=multer({storage:location_images}).single('file');
+
+	//To increment number of avaiable spaces
+	var add = function add_numberOfAvailableSpaces(n,place_id){
+		setInterval(function(){
+			add_space.find({_id:place_id},function(err,docs){
+				if(err) return console.error(err);
+
+				else
+				{
+					docs[0].numberOfAvailableSpaces = docs[0].numberOfAvailableSpaces + 1;
+					docs[0].save();
+					clearInterval(add);
+				}
+			})
+		}, n * 60 * 60 * 1000);
+	}
+
+	function deletetoken(email)
+	{
+		setTimeout(function(){
+			user.find({email:email},function(err,docs){
+				if(err) return console.error(err);
+
+				else
+				{
+					docs[0].token = "";
+					docs[0].save();
+				}
+			})
+		}, 24 * 60 * 60 * 1000);
+	}
+
+
+	var startdate='',enddate='',starttime='',endtime='';
+	// Controller Code Starts here
+	var ctrl = 
+	{
+		authMiddleware: function(req, res, next) {
+		 	var token = req.body.token || req.query.token || req.headers['token'];
+				user.find({"token": token},function(err,docs){
+					if(docs.length == 0 || docs == null || docs == undefined)
+					{
+						res.send({status:false,message:"Token Not Found"})
+						return false;
+					}
+					else
+					{
+						var tokenDB = docs[0].token;
+						if (tokenDB) 
+						{
+							if (token == tokenDB)
+							{
+								next();
+							}
+							else
+							{
+								res.send({status:false,message:"Token is wrong"});
+								return false;
+							}
+						}
+						else {
+							return res.status(403).send({
+								status: false,
+								message: 'No token provided.'
+							});
+						}
+					}
+				});			
+		},
+		save_user_details:function(req,res)
+		{
+				user.findOne({$or: [{ email: req.body.email},{phone_number:req.body.phonenumber}]}, 'email password usertype', function(err, guy) 
+				{
+					if (!err && guy)
+					{
+				
+						res.send({status:false,message:"Email or Phonenumber is Already Registered"})
+					}
+					else 
+					{
+						var objToken = {password:"sdq2312398qzkj^$%^$%^$bda@@$%%%skjd12312akjsd12321kasd1!@#!@12!^&$^%^@#$@$%",email:"pmelamparithi@gmail.com",_id:"asda12312342345654645645"}
+				        var token = jwt.sign(objToken,key, {
+				            expiresIn: 1440 // expires in 24 hours
+				        });
+						var wallet = 0;
+						var count_ref = 0;
+						//var code = createCoupon.generate({parts : 1, partLen : 6});
+						var ency_passwd = encryptor.encrypt(req.body.password);
+						function randomString(length, chars) {
+							var result = '';
+							for (var i = length; i > 0; --i) result += chars[Math.round(Math.random() * (chars.length - 1))];
+								return result;
+						}
+						var otp_gen =randomString(5, '0123456789');	
+						var ref_code = req.body.fname+randomString(5, '012AVkiskfkfbwkfsdflkjhasdfj3456789');
+						
+						var save_dtls = new user({ "firstname": req.body.fname,"ref_code":ref_code, "lastname": req.body.lname, "phone_number": req.body.phonenumber, "email":req.body.email, "password":ency_passwd,"token":token, "wallet": wallet,"status":"0","otp":"12345"/*otp_gen*/,"device_token":req.body.deviceToken,"device_type":req.body.deviceType,"f_id":req.body.facebookId,"g_id":req.body.googleId,"violations":0});
+						console.log(save_dtls)
+						client.sendMessage({
+							to:"+919944721544",
+							from: '+16176525030',
+							body: 'One Time Password is : '+otp_gen
+						},function(errsms,data)
+						{
+							if (data)
+							{
+								save_dtls.save(function(errs,savedData)
+								{
+									//var myobj = {userName:savedData.firstname +" "+savedData.lastname,userPhoneNumber:savedData.phone_number,userMailId:savedData.email,HotlineMailId:savedData.hotline_email_id,HotlinePhoneNumber:savedData.hotline_phone_number};
+									console.log(savedData)
+									if (!errs) 
+									{
+										res.send({status:true,message:"Signup Successful",token:token});		
+									}
+									else
+									{
+										res.send({status:false,message:"Signup Not Successful"});		
+									}
+								});
+							}
+							
+							else 
+							{
+
+								res.send({status:false,message:"Try Again"});
+							}
+							
+						//   console.log(data);
+						});
+					}
+				});
+		},
+		userlogin: function(req, res) 
+		{
+			console.log(req.body)
+		    var g_id = req.body.googleId;
+		    var f_id = req.body.facebookId;
+		    if (!g_id && !f_id && req.body.password) {
+					//console.log(req.body.email)
+					user.findOne(
+					{
+						email: req.body.email
+					}, 
+					function(err, guy) {
+						if (!err && guy)
+	                    {
+	                        console.log(encryptor.decrypt(guy.password));
+	                        if (encryptor.decrypt(guy.password) == req.body.password)
+	                        {
+	                        	console.log(guy.status)
+								if(guy.status=="0"){
+											res.send({status:false,"message":"Not a Verified User",phoneNumber:guy.phone_number});
+								                }
+								else{
+	                            console.log("-------------------------------------------")
+	                            console.log(guy._doc)
+	                            console.log("+++++++++++++++++++++++++++++++++++++++++++")
+	                            var toKen = jwt.sign(guy._id, key, {
+	                                expiresIn: 1440 // expires in 24 hours
+	                            }); 
+                                    console.log(req.body.email)
+                                    console.log(req.body)
+	                            user.findOneAndUpdate({email:req.body.email},{token:toKen,device_token:req.body.deviceToken,device_type:req.body.deviceType},{new:true},function(reqa,resa)
+	                            {
+                                        if(reqa)
+                                        {
+											res.send({status:false,"message":"Check DeviceToken and Type"})
+                                        }
+	                                var myobj = {userName:resa.firstname +" "+resa.lastname,userPhoneNumber:resa.phone_number,userMailId:resa.email,HotlineMailId:resa.hotline_email_id,HotlinePhoneNumber:resa.hotline_phone_number,ProfileImageUrl:resa.image_path,token:resa.token};
+	                                res.json({
+	                                   status: true,
+	                                   message: 'Login Successful',
+	                                   userdetails:myobj
+	                                });
+	                            
+	                            });
+                                  }
+	                        }
+                                else
+                                {
+                                    res.send({status:false,"message":"Password is Incorrect"})
+                                } 
+	                	} 
+						else 
+						{
+						    res.json({
+						        status: false,
+						        message: 'User Not Found'
+						    });
+						}
+					});
+		    } 
+		    else if (!g_id && f_id) //facebook
+		    {
+		            user.findOne({'f_id': f_id }, function(err, docs) 
+		            {
+		            	if(docs == null)
+		            	{
+							res.send({status:false,message:"This FacebookId is not registered"});
+							return false;
+		            	}
+	                    else if (err)
+	                    {       
+	                        res.send({status:false,message:"This FacebookId is not registered"});
+	                        return false;
+	                    }
+						else if(docs.status=="0"){
+							res.send({status:false,"message":"Not a Verified User",phoneNumber:docs.phone_number});
+						} 
+		                else if(docs)
+		                {
+		                    var object = new user(
+		                    {
+		                        'email': docs.email,
+		                        'image_path': docs.image_path,
+		                        'phone': docs.phone,
+		                        'fname': docs.fname,
+		                        'lname': docs.lname,
+		                        'f_id': docs.f_id
+		                    });
+							var objToken = {password:"sdq2312398qzkj^$%^$%^$bda@@$%%%skjd12312akjsd12321kasd1!@#!@12!^&$^%^@#$@$%",email:"pmelamparithi@gmail.com",_id:"asda12312342345654645645"}
+                                        var toKen = jwt.sign(objToken,key, {
+                                            expiresIn: 1440 // expires in 24 hours
+                                        });
+
+		                    user.findOneAndUpdate({'f_id': f_id},
+		                    {
+		                    	token:toKen
+		                    },
+		                    function(errf,finfo)
+		                    {
+								res.json({
+								    status: true,
+								    message: 'Login Successful',
+								    token: toKen
+								});	
+		                    })
+		                    
+		                }
+		                else{
+		                    res.json({
+		                        status: false,
+		                        message: 'This facebookid is not registered'
+		                    });
+		                }
+		            });
+
+		    } 
+		    else if (g_id && !f_id) //gmail login
+		    {
+	            user.findOne({'g_id': g_id }, function(err, docs) 
+	            {
+	            	if(docs == null)
+	            	{
+						res.send({status:false,message:"This GoogleId is not registered"});
+						return false;
+	            	}
+                    else if (err)
+                    {       
+                        res.send({status:false,message:"This GoogleId is not registered"});
+                        return false;
+                    }
+					else if(docs.status=="0"){
+						res.send({status:false,"message":"Not a Verified User",phoneNumber:docs.phone_number});
+					}                        					
+	                else if(docs)
+	                {
+	                    var object = new user(
+	                    {
+	                        'email': docs.email,
+	                        'image_path': docs.image_path,
+	                        'phone': docs.phone,
+	                        'fname': docs.fname,
+	                        'lname': docs.lname,
+	                        'g_id': docs.g_id
+	                    });
+						var objToken = {password:"sdq2312398qzkj^$%^$%^$bda@@$%%%skjd12312akjsd12321kasd1!@#!@12!^&$^%^@#$@$%",email:"pmelamparithi@gmail.com",_id:"asda12312342345654645645"}
+                                    var tokEn = jwt.sign(objToken,key, {
+                                        expiresIn: 1440 // expires in 24 hours
+                                    });
+
+	                    user.findOneAndUpdate({'g_id': g_id},
+	                    {
+	                    	token:tokEn
+	                    },
+	                    function(errf,finfo)
+	                    {
+							res.json({
+							    status: true,
+							    message: 'Login Successful',
+							    token: tokEn
+							});	
+	                    })
+	        		}
+	        		else
+	        		{
+	                    res.json({
+	                        status: false,
+	                        message: 'This googleId Is Not Registered'
+	                    });
+	        		}
+			    });
+		    }
+			else 
+			{
+				res.send({
+				    status: false,
+				    message: "Error"
+				});
+			}
+		},
+	savevehicleDtls:function(req,res)
+    {
+    	user.findOne({token:req.body.token},function(rez,resz)
+    	{
+	        //var userId = req.body.userid;
+	        vehicleDtls.find({ user_id: resz._id,vehicleNumber:req.body.vehicleNumber }, function(err, guy) 
+	        {
+	          if(guy == null)
+	          {
+	            var vehicleInputs = new vehicleDtls({user_id:resz._id,vehicleModel:req.body.vehicleModel,vehicleNumber:req.body.vehicleNumber,vehicleInsuranceNumber:req.body.vehicleInsuranceNumber});
+	            vehicleInputs.save(function(err,info) 
+	            {
+	              if (!err) {
+	                res.json({status:true,message:"Vehicle Added Successfully",vehicleId:info._id});
+	              } else {
+	                res.json({status:false,message:"Error Occured!"});
+	              }
+	            });
+	          }
+	          else if(guy.length == 0)
+	          {
+	            var vehicleInputs = new vehicleDtls({user_id:resz._id,vehicleModel:req.body.vehicleModel,vehicleNumber:req.body.vehicleNumber,vehicleInsuranceNumber:req.body.vehicleInsuranceNumber});
+	            vehicleInputs.save(function(err,info) 
+	            {
+	              if (!err) {
+	                res.json({status:true,message:"Vehicle Added Successfully",vehicleId:info._id});
+	              } else {
+	                res.json({status:false,message:"Error Occured"});
+	              }
+	            });
+	          }
+	          else if (req.body.vehicleNumber == guy[0].vehicleNumber) 
+	          {
+	            res.json({status:false,message:"Vehicle Already Saved"})
+	          }
+    		});
+    	});
+    },
+		getallVehicleDetails:function(req,res)
+		{
+
+				var finalArr = [];
+				user.findOne({token:req.body.token},function(reqz,resz)
+				{
+					vehicleDtls.find({user_id:resz._id},function(err,info){
+						console.log(resz._id)
+						if (info)
+						{
+							for (var i = 0;i < info.length;i++) 
+							{
+								var finalObj = 	{vehicleId:info[i]._id ,vehicleModel:info[i].vehicleModel ,vehicleNumber:info[i].vehicleNumber ,vehicleInsuranceNumber:info[i].vehicleInsuranceNumber};
+							    finalArr.push(finalObj);
+							}
+							if(finalArr.length == 0){
+								res.send({status:false,message:"No vehicle found"});
+								return false;
+							}
+							res.send({status:true,vehicleDetails:finalArr})                
+						}
+						else
+						{
+							console.log(err)
+							res.send({status:false,message:"No Vehicle To Show"})
+						}
+					})					
+				})
+
+	},
+		cnfrmotp:function(req,res)
+		{
+				var otp = req.body.otp;
+				console.log(req.body.phoneNumber)
+				user.findOne({ phone_number: req.body.phoneNumber }, function(err, guy) 
+				{
+					if (!err && guy) 
+					{
+		                //console.log(guy)
+		                //console.log(guy)
+		                if (guy.otp == req.body.otp) 
+		                {
+		                	user.findOneAndUpdate({phone_number:req.body.phoneNumber},
+		                	{
+		                		$unset: { otp: ""},
+		                		$set: {status:"1"}
+		                	},
+		                	{new:true},
+		                	function(errr,info)
+		                	{
+		                		var myobj = {userName:info.firstname +" "+info.lastname,userPhoneNumber:info.phone_number,userMailId:info.email,HotlineMailId:info.hotline_email_id,HotlinePhoneNumber:info.hotline_phone_number,token:info.token};
+		                		console.log(info)
+		                		if(errr)
+		                		{
+		                			res.send({status:false,message:"Something went wrong try again"});
+		                		}
+		                		else
+		                		{
+		                			res.send({status:true,message:"otp matched",userdetails:myobj});
+		                		}
+		                	})     
+		                }
+		                else 
+		                {
+		                	res.json(
+		                	{
+		                		status: false,
+		                		message: 'OTP not matched'
+		                	});
+		                }
+		            } else {
+		            	res.json({
+		            		status: false,
+		            		message: 'User Not Found'
+		            	});
+		            }
+		        });
+		},
+		rentSpace:function(req,res)
+		{  
+			var arr=[];
+			var str=req.body.LatLong.split(',');
+			arr[0]=str[0];
+			arr[1]=str[1];
+			console.log(arr[0] +" and "+ arr[1])
+			if(req.body.LatLong == ""){
+		                res.json({status:false,message:"Latitude and Longitude is Empty"});
+		                return false;	  
+		        }
+			else if(arr[0]=="" || arr[1] == ""){
+				res.json({status:false,message:"Latitude or Longitude is Empty"});
+                                return false;
+			}
+		       else if (arr[0]==undefined || arr[1] == undefined)
+		       {
+		          	res.json({status:false,message:"Latitude or Longitude is Wrong"});
+          			return false;
+          		}
+			user.findOne({token:req.body.token},function(rez,resz)
+			{
+			    add_space.find({'latlong':arr}, function(err, guy) 
+			    {
+			      if(guy.length==0 && (!err))
+			      {
+			        var spaceArr = [];
+			        spaceArr.push({singleSpace:req.body.singlespace,multipleSpace:req.body.multiplespace});
+			        var noas;
+					var nos;
+			        if(req.body.SpaceType=="single")
+			        {
+			          console.log("single");
+			          noas = 1;
+				  	nos =1;
+			        }
+			        else if(req.body.SpaceType=="multiple")
+			        {
+			          console.log("multiplespace");
+			          noas = req.body.NumberOfSpace;
+				  	nos = req.body.NumberOfSpace;
+			        }
+			        var arr=[];
+			        var str=req.body.LatLong.split(',');
+			        arr[0]=str[0];
+			        arr[1]=str[1];
+			        var person = new add_space({'user_id':resz._id,
+			        'title': req.body.title, 'location': req.body.Location,
+			        'parking_type':req.body.ParkingType,'space':spaceArr,
+			        "numberOfAvailableSpaces":noas, 'numberOfSpace':nos,
+			        "description": req.body.Description, "type": req.body.Type,
+			        "space_delimited":req.body.sd,"available_status":req.body.AvailableStatus,
+			        "latlong":arr,'hourly':req.body.Hourly,
+			        'weekly':req.body.Weekly,
+			        'daily' :req.body.Daily,
+			        'monthly':req.body.Monthly,
+			        'rent_prev_violator':req.body.rpv,
+			        'placeHeight':req.body.HeightRestriction,
+			        'paymentDetails':req.body.PaymentDetails,
+			        'owner_type':req.body.OwnerType,
+			        'space_type':req.body.SpaceType,
+			        'space_delinated':req.body.SpaceDelinated,
+			        'amenties':req.body.Amentities}); 
+			        // type will be individual owner or business
+			        person.save(function(err,doc){
+			          if(err || doc==='null') {
+					 res.json({status:false,'message':'Latitude and Longitude is not in range'});
+					 return false;
+					}
+
+			          else 
+			          {
+			            res.json({'status':true,'MySpaceId':person._id,message:"Successfully created","space_status":"waiting for hasty approval"});
+					return false
+			          }
+			        });
+			      }
+			      else if(guy.length>0  || err)
+			      {  
+			        res.json({'status':false,message:"Sorry this place Already exist"});
+				return false;
+			      }
+			    })
+			});  
+		},
+	findSpace:function(req,res,next)
+    {
+      //Getting Total Hours
+     	startdate=req.body.startdate;
+        enddate=req.body.enddate;
+        starttime=req.body.starttime;
+        endtime=req.body.endtime;
+
+
+      
+      var timeParts = starttime.split(':'),
+        dateParts = startdate.split('-');
+        var start=new Date(dateParts[0], parseInt(dateParts[1], 10) - 1, dateParts[2], timeParts[0], timeParts[1]);
+      
+        timeParts = endtime.split(':'),
+        dateParts = enddate.split('-');
+      var end=new Date(dateParts[0], parseInt(dateParts[1], 10) - 1, dateParts[2], timeParts[0], timeParts[1]);
+    
+      start=start.getTime();
+      end=end.getTime();
+
+      var h = (Math.abs(end - start)/3.6e6);
+
+
+         //Getting Total Hours
+
+
+          // Getting start & end Time , splitting
+          //var e_t=endtime.split(':');
+          //var s_t=starttime.split(':');
+          var amount=0;
+
+      //h=h+parseInt(e_t);
+      //h=h+parseInt(s_t);
+
+         var total_hours=h+"hours";
+         // counting total number of months
+         var months=0,weeks=0,days=0;
+
+         // total hours for a day,week,month
+         var wh=168,dh=24,mh=720;
+
+
+         // calculating total number of months
+         if(h>=mh)
+         {
+             months=parseInt(h/mh);
+             h=parseInt(h%mh);
+
+             //calculating total number of weeks
+             if(h>=wh)
+             {
+               weeks=parseInt(h/wh);
+               h=parseInt(h%wh);
+             }
+
+             //calculating total number of days
+             if(h>=dh)
+             {
+               days=parseInt(h/dh);
+               h=parseInt(h%dh);
+             }
+         }
+         else
+         {
+
+             //calculating total number of weeks
+             if(h>=wh)
+             {
+               weeks=parseInt(h/wh);
+               h=parseInt(h%wh);
+             }
+
+             //calculating total number of weeks
+             if(h>=dh)
+             {
+               days=parseInt(h/dh);
+               h=parseInt(h%dh);
+             }
+         }
+
+      var Searched_list=[];
+      var latlong=req.body.LatLong.split(',');
+      add_space.find({
+        latlong:
+        { 
+          $near :
+          {
+            $geometry: { type: "Point",  coordinates: latlong},
+            $maxDistance:2000
+          }
+        },available_status:"yes"
+      }).limit(20).exec(function(err, docs) 
+      {
+        if (err) {
+          console.log(err);
+          return res.json(500, err);
+        }
+        else
+        {
+          if(docs.length==0)
+          {
+            res.send({status:false,message:"No Space Found"});
+            return false
+          }
+               else if(docs.length>=1)
+               {
+            for(var i=0;i<docs.length;i++)
+            {
+
+              if(docs[i].numberOfAvailableSpaces>0)
+              {  
+                var ph=docs[i].hourly;
+                var pw=docs[i].weekly;
+                var pd=docs[i].daily;
+                var pm=docs[i].monthly;
+                // location
+                var location=docs[i].location;
+                // calculating amount
+                amount=(ph*h)+(pd*days)+(pw*weeks)+(pm*months);
+                var latlong=docs[i].latlong[0]+',';
+                latlong+=docs[i].latlong[1];
+		var result=req.body.LatLong.split(',');
+                if(result[0]==docs[i].latlong[0] && result[1]==docs[i].latlong[1])
+                {
+                  //creating object for each location
+                  var temp={'LatLong':latlong,'PlaceId':docs[i]._id,
+                  'FromToDate':req.body.startdate+' to '+req.body.enddate,
+                  'Duration':total_hours,'TotalAmount':amount,
+                  'PlaceName':docs[i].title,
+                  'LocationName':docs[i].location,'ParkingType':docs[i].parking_type,
+                  'SpaceType':docs[i].space_type,'Amenties':docs[i].amenties,
+                  'Description':docs[i].description,'searchedStatus':'yes',
+                  'Amentities':docs[i].amenties,'isThisSpaceDelinated':docs[i].space_delinated,
+                  'Price':docs[i].hourly+'/hrs'}
+                  Searched_list[i]=temp;  
+                }
+                else
+                {
+                  var temp={'LatLong':latlong,'PlaceId':docs[i]._id,
+                  'FromToDate':req.body.startdate+' to '+req.body.enddate,
+                  'Duration':total_hours,'TotalAmount':amount,
+                  'PlaceName':docs[i].title,
+                  'LocationName':docs[i].location,'ParkingType':docs[i].parking_type,
+                  'SpaceType':docs[i].space_type,'Amenties':docs[i].amenties,
+                  'Description':docs[i].description,'searchedStatus':'no','Price':docs[i].hourly+'/hrs','isThisSpaceDelinated':docs[i].space_delinated
+                  }
+                  Searched_list[i]=temp;  
+
+                }  
+              }  
+            }
+            res.json({status:true,message:"Available space details",'Searched_details':{'Searched_List':Searched_list}});
+          }
+        }
+        });      
+    },
+Booking:function (req,res)
+{
+      // Getting Start &  End Date
+     
+    var timeParts = starttime.split(':'),
+      dateParts = startdate.split('-');
+      var start=new Date(dateParts[0], parseInt(dateParts[1], 10) - 1, dateParts[2], timeParts[0], timeParts[1]);
+    
+      timeParts = endtime.split(':'),
+      dateParts = enddate.split('-');
+    var end=new Date(dateParts[0], parseInt(dateParts[1], 10) - 1, dateParts[2], timeParts[0], timeParts[1]);
+
+
+    console.log('start date->'+start+' end date->'+end);
+  
+    // start=start.getTime();
+    // end=end.getTime();
+
+    var h = (Math.abs(end - start)/3.6e6);
+
+
+    console.log('start Timestamp->'+start+' end Timestamp->'+end);
+
+
+      console.log(startdate+' '+enddate+' '+starttime+' '+endtime);  
+       //Getting Total Hours
+
+
+        // Getting start & end Time , splitting
+        var e_t=endtime.split(':');
+        var s_t=starttime.split(':');
+        var amount=0;
+
+    //h=h+parseInt(e_t);
+    //h=h+parseInt(s_t);
+
+       var total_hours=h+"hours";
+       console.log(total_hours)
+       // counting total number of months
+       var months=0,weeks=0,days=0;
+
+       // total hours for a day,week,month
+       var wh=168,dh=24,mh=720;
+
+
+       // calculating total number of months
+       if(h>=mh)
+       {
+           months=parseInt(h/mh);
+           h=parseInt(h%mh);
+
+           //calculating total number of weeks
+           if(h>=wh)
+           {
+             weeks=parseInt(h/wh);
+             h=parseInt(h%wh);
+           }
+
+           //calculating total number of days
+           if(h>=dh)
+           {
+             days=parseInt(h/dh);
+             h=parseInt(h%dh);
+           }
+       }
+       else
+       {
+
+           //calculating total number of weeks
+           if(h>=wh)
+           {
+             weeks=parseInt(h/wh);
+             h=parseInt(h%wh);
+           }
+
+           //calculating total number of weeks
+           if(h>=dh)
+           {
+             days=parseInt(h/dh);
+             h=parseInt(h%dh);
+           }
+       }
+
+       console.log('hours:'+h+' days:'+days+' weeks:'+weeks+' months:'+months);
+       function Difference(a1, a2) {
+                          // var result = [];
+                          // for (var i = 0; i < a1.length; i++) {
+                          //   if (a2.indexOf(JSON.stringify(a1[i])) === -1) {
+                          //     result.push(a1[i]._id);
+                          //   }
+                          // }
+                          // for (i = 0; i < a2.length; i++) {
+                          //   if (a1.indexOf(JSON.stringify(a2[i])) === -1) {
+                          //     result.push(a2[i]);
+                          //   }[1,2,3]
+                          //        [2,3]
+                          // }
+                          // return result;
+                          var i;
+                          var j;
+                          var result = [];
+                          result = a1;
+                          var len1 = result.length;
+                          var len2 = a2.length;
+                          for(i=0;i<len1;i++)
+                          {
+                              for(j=0;j<len2;j++)
+                              {
+                                  if(JSON.stringify(result[i])==JSON.stringify(a2[j]))
+                                  {
+                                      console.log("adding"+result[i]);
+                                      result[i] = "-1";
+                                      break;
+                                  }
+                              }
+
+                          }
+                          var final = [];
+                          j=0;
+                          var le = result.length;
+                          for(i=0;i<le;i++)
+                          {
+                              if(result[i]!="-1")
+                              {
+                                  final[j] = result[i];
+                                  j++; 
+                              }
+                          }
+                          return final;
+                        }
+    user.findOne({token:req.body.token},function(Err,gUy)
+    {                 
+        add_space.find({'_id':req.body.PlaceId},function(err,docs){
+            if(err)
+            {
+                return res.send({status:false,message:"Error Occured"});
+            }
+            else
+            {
+                var ts = docs[0].numberOfSpace;
+                console.log("ts"+ts);
+                order.find({'place_id':req.body.PlaceId,'end_timestamp':{$gt:start},'extendedStatus': null},function(err1,orders1){
+                    if(err1)
+                    {
+                        return res.send({status:false,message:"Error Occured!"});
+                    }
+                    else
+                    {    
+                        
+                        var os = orders1.length; //occpied spaces 1
+                        console.log("os:"+os);
+                        var as = ts - os;
+                        console.log("as:"+as);
+                        console.log("orders1:"+orders1);
+                        
+                        order.find({'place_id':req.body.PlaceId,'start_timestamp':{$gte:end},'extendedStatus': null},function(err2,orders2){
+                            os2 = orders2.length; //occupied spaces 2
+                            console.log("os2:"+os2);
+                            var fas = as + os2;
+                            console.log("orders2:"+orders2);
+                            console.log("fas:"+fas);
+                            var ord = Difference(orders1,orders2);
+                            var len = ord.length;
+                            var flagy = 0;
+                            console.log("Ord Len:"+len);
+                            console.log("ord"+ord);
+                            for(var i=0;i<len;i++)
+                            {
+                                if(ord[i].vehicleNumber == req.body.vehicleNumber)
+                                {
+                                    flagy++;
+                                    break;
+                                }
+                            }
+                            if(flagy>0)
+                            {
+                                res.send({status:false,message:"Vehicle with same Number already exists in the parking lot!"});
+                            }
+                            else
+                            {
+
+                                if(fas>0)
+                                {
+                                    var ph=docs[0].hourly;
+                                    var pw=docs[0].weekly;
+                                    var pd=docs[0].daily;
+                                    var pm=docs[0].monthly;
+
+                                    // location
+                                    var location=docs[0].location;
+                                    console.log(location);
+
+                                    // calculating amount
+                                    amount=(ph*h)+(pd*days)+(pw*weeks)+(pm*months);
+
+                                    console.log("New Amount"+amount);
+
+                                    // calculating time
+                                    var current_time=new Date();
+                                    var hours=current_time.getHours();
+                                    var minutes = current_time.getMinutes();
+                                    minutes = minutes < 10 ? '0'+minutes : minutes;
+                                    var strTime = hours + ':' + minutes;
+
+
+                                    // calculating current date
+                                    var currentdate = new Date(); 
+                                    var datetime = currentdate.getDate() + "/"
+                                                  + (currentdate.getMonth()+1)  + "/" 
+                                                  + currentdate.getFullYear();
+
+                                    console.log("current time"+ strTime+' current date'+datetime);
+
+                                    var new_order = new order({'user_id':gUy._id, 
+                                                            'place_id':docs[0]._id,'start_timestamp':start,'end_timestamp':end,'Amount':amount,
+                                                            'booktime':strTime+' '+datetime,'duration':total_hours,'location':docs[0].location,
+                                                            'vehicleNumber':req.body.vehicleNumber,'vehicleModel':req.body.vehicleModel,'vehicleInsuranceNumber':req.body.vehicleInsuranceNumber,'vehicleId':req.body.vehicleId
+
+
+                                                            });
+                                    new_order.save(function(err,docs1)
+                                    {
+                                        console.log(docs[0]);
+
+                                      if(err) return res.send({status:false,'message':'error occured during saving order'});
+                                      else
+                                      {
+                                        res.send({status:true,message:"Booking Done"})
+                                      }
+                                    });
+                                }
+                                else
+                                {
+                                    res.send({status:false,message:"No space available"});
+                                }
+                            }
+                        });
+                    }
+                });
+            
+            }
+        });
+    }); 
+},
+extend_booking:function(req,res,next)
+        {
+
+               var endDate = req.body.EndDate;
+               var endTime = req.body.EndTime; 
+
+
+                var timeParts = endTime.split(':'),
+                dateParts = endDate.split('-');
+                var end=new Date(dateParts[0], parseInt(dateParts[1], 10) - 1, dateParts[2], timeParts[0], timeParts[1]);
+                // end=end.getTime();
+                var start;
+                order.findOne({ '_id':req.body.OrderId ,'extendedStatus': null}, function(err, pqr)
+                {
+                      if(err)
+                      {
+                        return res.send({status:false,'message':'error occured while searching in order'});
+                      }
+                      else if(pqr==null)
+                      {
+                        return res.send({status:false,'message':'not found any value from order'});
+                      }
+
+                      var placeID = pqr.place_id;
+                      var orderID = pqr.order_id;   
+                      
+                      start=pqr.start_timestamp;
+
+
+                      console.log('start timestamp->'+start+'  end timestamp->'+end);  
+
+                      //Getting Total Hours        
+                      var h = (Math.abs(end - start)/3.6e6);
+
+                      // Getting start & end Time , splitting
+                      
+                      var amount=0;
+                      // calculating total hours  
+                        // h=h+parseInt(e_t);
+                        // h=h+parseInt(s_t);
+
+                         var total_hours=h+"hours";
+                    
+                      // counting total number of months
+                      var months=0,weeks=0,days=0;
+                    
+                      // total hours for a day,week,month
+                      var wh=168,dh=24,mh=720;
+                    
+                      // calculating total number of months
+                      if(h>=mh)
+                      {
+                        months=parseInt(h/mh);
+                        h=parseInt(h%mh);
+                        //calculating total number of weeks
+                        if(h>=wh)
+                        {
+                          weeks=parseInt(h/wh);
+                          h=parseInt(h%wh);
+                        }
+                        //calculating total number of days
+                        if(h>=dh)
+                        {
+                          days=parseInt(h/dh);
+                          h=parseInt(h%dh);
+                        }
+                      }
+                      else
+                      {
+                        //calculating total number of weeks
+                        if(h>=wh)
+                        {
+                          weeks=parseInt(h/wh);
+                          h=parseInt(h%wh);
+                        }
+
+                        //calculating total number of weeks
+                        if(h>=dh)
+                        {
+                          days=parseInt(h/dh);
+                          h=parseInt(h%dh);
+                        }
+                      }
+                      console.log('hours='+h+' days='+days+' weeks='+weeks+' months='+months);
+                      
+
+
+
+
+
+                 start_old = pqr.start_timestamp;
+                 start = pqr.end_timestamp;
+                 placeId = pqr.place_id;
+                 console.log("Start:" + start);
+                  console.log("End:" + end);
+                  user.findOne({token:req.body.token},function(Err,gUy)
+                 {
+                    add_space.find({'_id':placeId},function(err,docs){
+                        if(err)
+                        {
+                            return res.send({status:false,message:"Error Occured"});
+                        }
+                        else
+                        {
+                            var ts = docs[0].numberOfSpace;
+                            console.log("ts"+ts);
+                            order.find({'place_id':placeId,'end_timestamp':{$gt:start},'extendedStatus': null},function(err1,orders1){
+                                if(err1)
+                                {
+                                    return res.send({status:false,message:"Error Occured!"});
+                                }
+                                else
+                                {
+                                    var os = orders1.length; //occpied spaces 1
+                                    console.log("os:"+os);
+                                    var as = ts - os;
+                                    console.log("as:"+as);
+                                    console.log("orders1:"+orders1);
+                                    
+                                    order.find({'place_id':placeId,'start_timestamp':{$gte:end},'extendedStatus': null},function(err2,orders2){
+                                        os2 = orders2.length; //occupied spaces 2
+                                        console.log("os2:"+os2);
+                                        var fas = as + os2;
+                                        console.log("orders2:"+orders2);
+                                        console.log("fas:"+fas);
+                                        if(fas>0)
+                                        {
+                                            var ph=docs[0].hourly;
+                                            var pw=docs[0].weekly;
+                                            var pd=docs[0].daily;
+                                            var pm=docs[0].monthly;
+
+                                            // location
+                                            var location=docs[0].location;
+                                            console.log(location);
+
+                                            // calculating amount
+                                            amount=(ph*h)+(pd*days)+(pw*weeks)+(pm*months);
+
+                                            console.log("New Amount"+amount);
+
+                                            // calculating time
+                                            var current_time=new Date();
+                                            var hours=current_time.getHours();
+                                            var minutes = current_time.getMinutes();
+                                            minutes = minutes < 10 ? '0'+minutes : minutes;
+                                            var strTime = hours + ':' + minutes;
+
+
+                                            // calculating current date
+                                            var currentdate = new Date(); 
+                                            var datetime = currentdate.getDate() + "/"
+                                                          + (currentdate.getMonth()+1)  + "/" 
+                                                          + currentdate.getFullYear();
+
+                                            console.log("current time"+ strTime+' current date'+datetime);
+                                            console.log(amount);
+                                            console.log(pqr.Amount);
+                                            var amount_to_be_paid = amount - pqr.Amount;
+                                            var new_order = new order({'user_id':gUy._id, 
+                                                                    'place_id':docs[0]._id,'start_timestamp':start_old,'end_timestamp':end,'totalAmount':amount,'Amount':amount_to_be_paid,
+                                                                    'booktime':strTime+' '+datetime,'duration':total_hours,'location':docs[0].location,'extendedPastId':req.body.OrderId
+                                                                    });
+
+                                            new_order.save(function(err,docs1)
+                                            {
+                                              if(err) return res.send({status:false,'message':'error occured during saving order'});
+                                              else
+                                              {
+                                                  order.findOne({"_id":req.body.OrderId},function(err8,docs5){
+                                                      docs5.extendedStatus = true;
+                                                      docs5.save();
+                                                  })
+                                                res.send({status:true,message:"Booking Extended"});
+                                              }
+                                            });
+                                        }
+                                        else
+                                        {
+                                            res.send({status:false,message:"Booking can't be extended place is already full"});
+                                        }
+                                    });
+                                }
+                            });
+                        
+                        }
+                    });
+                  });
+                });                      
+        },
+	ProfileGetService:function(req,res)
+    {
+
+      user.findOne({token:req.body.token},function(err,user_details)
+      {
+        console.log(user_details);
+
+        if(err || user_details==null) return res.send({status:false,'message':"sorry not found any information"});
+        
+        cardDtls.find({'user_id':user_details._id},function(err,user_car)
+        {
+          if(err || user_details==null) return res.send({status:false,'message':"sorry not found any information"});
+            
+            bankDtls.find({'user_id':user_details._id},function(err,user_bank)
+            {
+              if(err || user_details==null) return res.send({status:false,'message':"sorry not found any information"});
+        
+              vehicleDtls.find({'user_id':user_details._id},function(err,user_vehicle)
+              {
+                if(err || user_details==null) return res.send({status:false,'message':"sorry not found any information"});
+	               res.send({'status':true,'message':"success",'email':user_details.email,'userName':user_details.firstname+" "+user_details.lastname,'userPhoneNumber':user_details.phone_number,
+                'walletBalance':'0','vehicleDetails':{'vehicle_list':user_vehicle}
+                });
+              });
+            });
+
+        });  
+
+      });
+    },
+getUpcomingPastDetails:function(req,res)
+    {
+
+      var current_timestamp=new Date();
+      current_timestamp=current_timestamp.getTime();
+      console.log('current_timestamp->'+current_timestamp);
+
+        user.findOne({token:req.body.token},function(rez,resz)
+        {
+          console.log(resz._id);
+               add_space.find({'user_id':resz._id},function(err,info)
+               {
+                 if(err){
+                   return res.send({status:false,'message':'error'});
+                 }
+                 else if(info.length==0 || info==null)
+                 {
+                   return res.send({status:false,'message':'No data available'});
+                 }
+                 else if (info)
+                 {
+                  var booking_list_past=[];
+                     var booking_list_upcoming=[];
+                     var m=0,n=0;
+
+                     var k=0,p=0;
+                   
+                     for(var i=0;i<info.length;i++)
+                     {
+                         var t_latlong=info[i].latlong[0]+',';
+                         t_latlong+=info[i].latlong[1];
+
+                         var tmp=info[i];
+                         if(tmp!=null)
+                         {
+                          order.find({place_id:tmp._id,paymentStatus:{$ne:'cancel'}},function(err,docs)
+                          {  
+                            // console.log("docsasd"+docs[1]);
+                          
+                            //console.log(docs);
+                              //console.log(docs.length);
+                              var startDate,endDate;
+                            for(var j=0;j<docs.length;j++)
+                            {
+                              if(docs[j].start_timestamp)
+                              {
+                                var myDate = new Date(docs[j].start_timestamp);
+                                var dd = myDate.getDate();
+                                var mm = myDate.getMonth()+1; //January is 0!
+                                var yyyy = myDate.getFullYear();
+                                if(dd<10)
+                                {
+                                    dd='0'+dd;
+                                } 
+                                if(mm<10)
+                                {
+                                    mm='0'+mm;
+                                } 
+                                var hh = myDate.getHours();
+                                var Mm = myDate.getMinutes();
+                                if(hh<10)
+                                {
+                                    dd='0'+dd;
+                                } 
+                                if(Mm<10)
+                                {
+                                    Mm='0'+Mm;
+                                }
+                                var startTime = hh+':'+Mm;
+                                startDate = dd+'/'+mm+'/'+yyyy;
+                                console.log("startDate"+startDate);
+                                // console.log("MyDate"+myDate.getDate());
+                                // console.log("MyDate"+myDate.getMonth());
+                                // console.log("MyDate"+myDate.getFullYear());                    
+                              }
+                              if(docs[j].end_timestamp)
+                              {
+                                var myDate = new Date(docs[j].end_timestamp);
+                                var dd = myDate.getDate();
+                                var mm = myDate.getMonth()+1; //January is 0!
+                                var yyyy = myDate.getFullYear();
+                                if(dd<10)
+                                {
+                                  dd='0'+dd;
+                                }   
+                                if(mm<10)
+                                {
+                                    mm='0'+mm;
+                                } 
+                                endDate = dd+'/'+mm+'/'+yyyy;
+                                console.log("endDate"+endDate);
+
+                                // console.log("MyDate"+myDate.getDate());
+                                // console.log("MyDate"+myDate.getMonth());
+                                // console.log("MyDate"+myDate.getFullYear());                    
+                              }
+                              if(docs[j].end_timestamp<current_timestamp)
+                              {
+                                    var order_temp=
+                                    {
+                                          'bookingId':docs[j]._id,
+                                          'bookingStatus':'Past',
+                                          'parkingPlaceName':tmp.title+tmp.location,
+                                          'latLong':t_latlong,
+                                          'parkingArrivalDateTime':startDate+' '+startTime,
+                                          'amount':docs[j].Amount,
+                                          'parkingType':tmp.parking_type,
+                                          'parkingSpaceType':tmp.parkingSpaceType,
+                                          'amentities':tmp.amenties,
+                                          'parkingAreaType':tmp.parkingAreaType,
+                                          'isThisSpaceDelinated':tmp.space_delinated,
+                                             'description':tmp.description,
+                                    }
+                                    booking_list_past[m++]=order_temp;
+                              }
+                              else
+                              {
+                                var order_temp=
+                                    {
+                                          'bookingId':docs[j]._id,
+                                          'bookingStatus':'upcoming',
+                                          'parkingPlaceName':tmp.title+tmp.location,
+                                          'latLong':t_latlong,
+                                          'parkingArrivalDateTime':startDate+' '+startTime,
+                                          'amount':docs[j].Amount,
+                                          'parkingType':tmp.parking_type,
+                                          'parkingSpaceType':tmp.parkingSpaceType,
+                                          'amentities':tmp.amenties,
+                                          'parkingAreaType':tmp.parkingAreaType,
+                                          'isThisSpaceDelinated':tmp.space_delinated,
+                                             'description':tmp.description,
+                                    }
+                                    booking_list_upcoming[n++]=order_temp;
+
+                              }      
+                            
+                            }
+                            console.log(k+" value");
+                            k++;
+                            if(k==info.length)
+                            {
+                              res.send({status:"true","message":"success","bookingDetails":{"bookingListUpcoming":booking_list_upcoming,'bookingListPast':booking_list_past}});                
+                                 console.log("its gone");
+                               }
+                                  
+                          })
+                      }    
+
+
+                  } 
+                  console.log(k+" value");
+                  if(k==info.length)
+                  {
+                    res.send({status:"true","message":"success","bookingDetails":{"bookingListUpcoming":booking_list_upcoming,'bookingListPast':booking_list_past}});                
+                       console.log("its gone");
+                     }
+                          
+              }
+            })      
+
+
+      })
+               
+    },
+		profileAdd:function (req,res) 
+		{
+
+			upload(req,res,function(err)
+			{
+				console.log(req.file);
+				console.log(req.body)
+				user.findOne({token:req.headers['token']},function(rez,resz)
+				{
+					user.findOneAndUpdate(
+					{
+						'_id':resz._id
+					}, 
+					{
+						'image_path':req.file.path
+					}, 
+					function(err, doc) 
+					{
+						if (err) 
+						{
+							res.json({status: false,message: 'Profile Not Updated'});
+							return false;
+						}
+						else 
+						{
+							res.send({status:true,message:"Profile Successfully uploaded",imageUrl:"192.169.164.224:8111"+req.file.path});
+							return false;
+						}
+
+					});
+				});
+			});
+		},
+
+
+getallSpaces:function(req,res)
+    {
+      var current_timestamp=new Date();
+      current_timestamp=current_timestamp.getTime();
+      console.log('current_timestamp->'+current_timestamp);
+
+        user.findOne({token:req.body.token},function(rez,resz)
+        {
+               add_space.find({'user_id':resz._id},function(err,info)
+               {
+                 if(err){
+                   return res.send({status:false,'message':'error'});
+                 }
+                 else if(info.length==0 || info==null)
+                 {
+                   return res.send({status:false,'message':'No place found'});
+                 }
+                 else if (info)
+                 {
+                     var mySpaceList=[];
+                     var my_book_space=[];
+                     var past_booking=[];
+                     var upcoming_booking=[];
+                     var m=0,n=0;
+
+                     var k=0,p=0;
+                   
+                     for(var i=0;i<info.length;i++)
+                     {
+                         var t_latlong=info[i].latlong[0]+',';
+                         t_latlong+=info[i].latlong[1];
+
+                         var prices=info[i].hourly+'/hr,'+info[i].daily+'/hr,'+info[i].weekly+'/hr';
+                           
+                         var temp={'mySpaceId':info[i]._id,
+                             'availableStatus':info[i].available_status,
+                             'statusFromHasty':'waiting for hasty approval',
+                             'mySpaceName':info[i].title,
+                             'latLong':t_latlong,
+                             'locationName':info[i].location,
+                             'prices':prices,
+                             'parkingType':info[i].parking_type,
+                             'parkingSpaceType':info[i].space_type,
+                             'parkingAreaType':info[i].parkingAreaType,
+                             'amentities':info[i].amenties,
+                             'isThisSpaceDelinated':info[i].space_delinated,
+                             'description':info[i].description,
+                             'imageLink':info[i].spotimage
+                             }
+                         mySpaceList[i]=temp;
+
+                          var tmp=info[i];
+                         if(tmp!=null)
+                         {
+                          order.find({place_id:tmp._id},function(err,docs)
+                          {  
+                            if(mySpaceList[i]!=null)
+                            {
+                              tmp=mySpaceList[i];
+                            }
+                            // console.log("docsasd"+docs[1]);
+                          
+                            //console.log(docs);
+                              //console.log(docs.length);
+                              var startDate,endDate;
+                            for(var j=0;j<docs.length;j++)
+                            {
+                              if(docs[j].start_timestamp)
+                              {
+                                var myDate = new Date(docs[j].start_timestamp);
+                                var dd = myDate.getDate();
+                                var mm = myDate.getMonth()+1; //January is 0!
+                                var yyyy = myDate.getFullYear();
+                                if(dd<10)
+                                {
+                                    dd='0'+dd;
+                                } 
+                                if(mm<10)
+                                {
+                                    mm='0'+mm;
+                                } 
+                                var hh = myDate.getHours();
+                                var Mm = myDate.getMinutes();
+                                if(hh<10)
+                                {
+                                    dd='0'+dd;
+                                } 
+                                if(Mm<10)
+                                {
+                                    Mm='0'+Mm;
+                                }
+                                var startTime = hh+':'+Mm;
+                                startDate = dd+'/'+mm+'/'+yyyy;
+                                console.log("startDate"+startDate);
+                                // console.log("MyDate"+myDate.getDate());
+                                // console.log("MyDate"+myDate.getMonth());
+                                // console.log("MyDate"+myDate.getFullYear());                    
+                              }
+                              if(docs[j].end_timestamp)
+                              {
+                                var myDate = new Date(docs[j].end_timestamp);
+                                var dd = myDate.getDate();
+                                var mm = myDate.getMonth()+1; //January is 0!
+                                var yyyy = myDate.getFullYear();
+                                if(dd<10)
+                                {
+                                  dd='0'+dd;
+                                }   
+                                if(mm<10)
+                                {
+                                    mm='0'+mm;
+                                } 
+                                endDate = dd+'/'+mm+'/'+yyyy;
+                                console.log("endDate"+endDate);
+                                // console.log("MyDate"+myDate.getDate());
+                                // console.log("MyDate"+myDate.getMonth());
+                                // console.log("MyDate"+myDate.getFullYear());                    
+                              }
+                              if(docs[j].end_timestamp<=current_timestamp)
+                              {
+                                          
+                                var order_temp=
+                                    {
+                                          'bookingId':docs[j]._id,
+                                          'mySpaceId':tmp._id,
+                                          'mySpaceName':tmp.title,
+                                          'latLong':t_latlong,
+                                          'locationName':tmp.location,
+                                          'fromAndToDate':startDate+' to '+endDate,
+
+                                    'duration':docs[j].duration,
+                                          'parkingArrivalDateTime':startDate+' '+startTime,
+                                          'paidAmount':docs[j].Amount,
+                                          'customerCarNumber':docs[j].vehicleNumber,
+                                          'customerCarModelnumber':docs[j].vehicleModel,
+                                          'customerInsuranceNumber':docs[j].vehicleInsuranceNumber
+                                    };
+                                    
+                                    past_booking[m++]=order_temp;
+                              }
+                              else
+                              {
+                                var order_temp=
+                                    {
+                                          'bookingId':docs[j]._id,
+                                          'mySpaceId':tmp._id,
+                                          'mySpaceName':tmp.title,
+                                          'latLong':t_latlong,
+                                          'locationName':tmp.location,
+                                          'fromAndToDate':startDate+' to '+endDate,
+                                          'duration':docs[j].duration,
+                                          'parkingArrivalDateTime':startDate+' '+startTime,
+                                          'paidAmount':docs[j].Amount,
+                                          'customerCarNumber':docs[j].vehicleNumber,
+                                          'customerCarModelnumber':docs[j].vehicleModel,
+                                          'customerInsuranceNumber':docs[j].vehicleInsuranceNumber
+                                    }
+                                    upcoming_booking[n++]=order_temp;
+
+                              }      
+                            
+                            }
+                            console.log(my_book_space[p-1]);
+                            console.log(k+" value");
+                            k++;
+                            if(k==info.length)
+                            {
+                              res.send({status:"true","message":"success","mySpaceDetails":{"mySpaceList":mySpaceList},"SpaceListReceivedBooking":{'upcoming':upcoming_booking,'past':past_booking}});                
+                                 console.log("its gone");
+                               }
+                                  
+                          })
+                      }    
+
+
+                  } 
+                  console.log(k+" value");
+                  if(k==info.length)
+                  {
+                    
+                    res.send({status:"true","message":"success","mySpaceDetails":{"mySpaceList":mySpaceList},"SpaceListReceivedBooking":{'past_bookings':past_booking,'upcoming_bookings':upcoming_booking}});                
+                       console.log("its gone");
+                     }
+                          
+              }
+            })      
+
+
+      })
+    },
+deleteVehicle:function(req,res)
+  {
+      user.findOne({token:req.body.token},function(rez,resz)
+    {
+      vehicleDtls.find({'user_id':resz._id,'_id':req.body.vehicleId},function(err){
+      if(err)
+      {
+        res.send({"status":false,"message":"Error Occured"});
+      }  
+      else
+      {
+        res.send({"status":true,"message":"Details Trashed"});
+      }      
+      }).remove().exec();
+    });
+  },
+		changepassword:function(req,res)
+		{
+			user.findOne({token:req.body.token}, function(err, guy) 
+			{		
+				if (!err && guy) 
+				{
+					if(req.body.oldpassword != encryptor.decrypt(guy.password)){
+						res.send({status:false,message:"Old Password is not correct"})
+						return false;	
+					}
+				        //console.log(guy)
+				        user.findOneAndUpdate(
+				        {
+				          '_id':guy._id 
+				        },
+				        {
+				          password: encryptor.encrypt(req.body.newpassword)
+				        },
+				        {new:true},
+				        function(errr,info)
+				        {
+				          if(errr)
+				          {
+				            res.send({status:false,message:"Password Not Updated"});
+				          }
+				          else
+				          {
+				            
+				            res.send({status:true,message:" New Password Updated"});
+				          }
+				        });     
+			    } 
+			    else 
+			    {
+			      res.json({status: false,message: 'User Not Found' });
+				}
+			});     
+		},
+		frgt_passwd:function(req,res)
+		{
+				function randomString(length, chars) {
+					var result = '';
+					for (var i = length; i > 0; --i) result += chars[Math.round(Math.random() * (chars.length - 1))];
+						return result;
+				}
+				var user_email = req.body.email;
+				var user_phone;
+				user.find({phone_number: req.body.phoneNumber},function(err,docs){
+					if(err)
+					{
+						res.send({status:false,message:"Something went wrong Try Again"})
+					}
+					else
+					{
+						user_phone = req.body.phoneNumber;
+						console.log(user_phone)
+						var otp_gen =randomString(5, '0123456789'); 
+						//console.log(otp_gen)
+						user.findOneAndUpdate({
+							phone_number: user_phone 
+						}, 
+						{
+							otp :"12345"/* otp_gen*/,
+							status:"0"
+						}, 
+						{
+							new: true
+						},
+						function(errs, sdoc) 
+						{
+							console.log(sdoc)
+							if (!sdoc){
+								res.json({status:false,message:"Phonenumber is not available"});
+							}
+							else
+							{
+				            	client.sendMessage({
+								  to:"+919944721544"/* user_phone*/,
+								  from: '+16176525030',
+								  body: 'One time Password for forgot password : '+otp_gen
+								},
+								function(erwr,data)
+								{
+								   if(erwr) 
+									{
+										res.json({status:false,message:"Otp Not Send"});
+										return false;
+									}
+									res.json({status:true,message:"Otp Successfully Send"});									
+								//   console.log(data);
+								});
+
+							}
+						});
+					}
+				});
+		},
+		rst_pwd:function(req,res)
+		{
+				var new_passwd = req.body.newPassword;
+				var new_passwd_encpt = encryptor.encrypt(new_passwd);
+				user.findOne({token:req.body.token}, function(err, guy) 
+				{
+					if (!err && guy) 
+					{
+			                //console.log(guy)
+			                user.findOneAndUpdate(
+			                {
+			                	token:req.body.token
+			                },
+			                {
+			                	password: new_passwd_encpt
+			                },
+			                {new:true},
+			                function(errr,info)
+			                {
+			                	console.log(info)
+			                	if(errr)
+			                	{
+			                		res.send({status:false});
+			                	}
+			                	else
+			                	{
+			                		var myobj = {userName:info.firstname +" "+info.lastname,userPhoneNumber:info.phone_number,userMailId:info.email,HotlineMailId:info.hotline_email_id,HotlinePhoneNumber:info.hotline_phone_number,ProfileImageUrl:info.image_path};
+			                		res.send({status:true,myobj});
+			                	}
+			                })     
+			            } else {
+			            	res.json({
+			            		status: false,
+			            		message: 'User Not Found'
+			            	});
+			            }
+			        });    
+		},
+		cant_find_spot:function(req, res, next)
+		{
+		    add_space.findOne({_id: req.body.place_id}, function(err, docs){
+		      var owner_id = docs.user_id;
+		      user.findOne({_id: owner_id}, function(err, data){
+		        if(err){
+		          res.json({
+		            status: false,
+		            message: "Owner info not available!"
+		          });
+		        }else{
+		          console.log(data);
+		          res.send({status: true, message:"Contact Owner", Contact: data.phone_number, Email:data.email, Name: data.firstname});
+		        }
+		      });
+		    });
+		},
+		User_In_Spot:function(req, res, next)
+		{ 
+			carUpload(req, res, function(err)
+			{
+				user.findOne({token:req.body.token},function(Err,gUy)
+				{
+
+					var report = new violator_dtls({user_id: gUy._id,
+					order_id: req.body.BookingId, image_name: req.file.originalname,
+					carNumber: req.body.CarPlateNumber, State:req.body.State,
+					report_type:req.body.ReportType,problem_type:req.body.ProblemType,
+					not_listed_details:req.body.NotListedDetails});
+					var orderID = req.body.BookingId;
+					order.findOne({_id: orderID}, function(err, docsOrder)
+					{
+						if(err) return err;
+						else
+						{
+							var violatorUserInfo = docsOrder.user_id;
+							user.findOne({_id: violatorUserInfo}, function(err, violatorDetails)
+							{
+								if(err)
+								{
+									res.json({status: false,message:"Couldn't get the Violator"})
+								}
+								else
+								{
+									violatorDetails.violations = violatorDetails.violations + 1;
+									violatorDetails.save();
+									console.log("VIOLATOR INFO:"+violatorDetails);
+								}
+							})
+						}
+					});
+					report.save(function(err)
+					{
+						if(err)
+						{
+							res.json({status: false,message: "fail to Register your Report"});
+						}
+						else
+						{
+							res.send({status: true,'UserId':report.user_id,'OrderId':report.order_id,message: "Your problem reported Successfully. Will resolve it soon"});
+						}
+					});
+				});
+			});
+		},
+		problem_not_listed:function(req, res, next)
+		{
+			res.send({status: true, Email:"hello@hasty.com", CustomerCare: "555-666-888"});
+		},
+		myspace_lock:function(req,res,next)
+		{
+			user.findOne({token:req.body.token},function(rez,resz)
+			{			
+				add_space.findOneAndUpdate(
+				{
+					'user_id':resz._id,
+					'_id':req.body.SpaceId
+				},
+				{
+					available_status:req.body.AvailableStatus
+				},
+				{
+					new:true
+				},
+				function(err,docs)
+				{
+					if(docs)
+					{
+						res.send({status:true,"spaceId":docs._id,message:"status Successfully updated"});
+					}
+					else
+					{
+						res.send({status:false,message:"Space Not Updated"});
+					}
+				});
+			});
+		}
+
+}
+	module.exports = ctrl;

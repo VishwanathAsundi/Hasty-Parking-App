@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-controller="myspacelist" ng-init="getspaces();">
+<head>
+<meta charset="utf-8">
+<title>Hasty Parking | Details page</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/styles.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/app.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/dropdown.js"></script>
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.js"></script>
+<script src="https://rawgit.com/nmccready/angular-simple-logger/master/dist/angular-simple-logger.js"></script>
+<script src="http://rawgit.com/angular-ui/angular-google-maps/master/dist/angular-google-maps.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6UApfqVf745fpHBgqQTbie7m9GaYqX-I"></script>
+<script type="text/javascript">
+var app=angular.module('app', ['uiGmapgoogle-maps']);
+
+  app.factory('Scopes', function ($rootScope) {
+    var mem = {};
+ 
+    return {
+        store: function (key, value) {
+            mem[key] = value;
+        },
+        get: function (key) {
+            return mem[key];
+        }
+    };
+  });
+
+     
+    app.controller('myspacelist',['$scope','$http','Scopes',function($scope,$http,Scopes){
+    var token = localStorage.getItem("token"); 
+    console.log("Token"+token);
+    console.log("Angular Working Fine. getspaces");
+    console.log('get spaces myspacelist');
+      $scope.getspaces = function() 
+      {
+      
+             console.log('inside the function');
+
+             $http({
+                method  : 'POST',
+                url     : __appurl + "website/getAllSpaces",
+                data    : {token:token},
+                headers : { 'Content-Type': 'application/json' }  
+            })
+            .success(function(data) 
+            { 
+              if(data.status)
+              {
+                  $scope.datas=data.mySpaceDetails;
+                  Scopes.store('mySpaceList',$scope.datas);
+                  $scope.upcoming=data.spaceListReceivedBooking.bookingListUpcoming;
+                  $scope.past=data.spaceListReceivedBooking.bookingListPast;
+                
+                  var centerpoint=$scope.datas[0].latLong.split(',');
+                  for(var i=0;i<$scope.datas.length;i++)
+                  {
+
+                    var LatLong=$scope.datas[i].latLong.split(',');
+                    $scope.datas[i].map= {center: {latitude: LatLong[1], longitude: LatLong[0]}, zoom: 16};
+                    $scope.datas[i].options = {scrollwheel: false};
+                    $scope.datas[i].coordsUpdates = 0;
+                    $scope.datas[i].dynamicMoveCtr = 0;
+                    $scope.datas[i].marker = 
+                    {
+                      id: i,
+                      coords:
+                      {
+                        latitude: LatLong[1],
+                        longitude: LatLong[0]
+                      },
+                      options: { draggable: false },
+                      events:
+                      {
+                        dragend: function (marker, eventName, args) 
+                        {
+                          $log.log('marker dragend');
+                          var lat = marker.getPosition().lat();
+                          var lon = marker.getPosition().lng();
+                          $log.log(lat);
+                          $log.log(lon);
+
+                          $scope.datas[i].marker.options = 
+                          {
+                            draggable: true,
+                            labelContent: "lat: " + $scope.datas[i].marker.coords.latitude + ' ' + 'lon: ' + $scope.datas[i].marker.coords.longitude,
+                            labelAnchor: "1000",
+                            labelClass: "marker-labels"
+                          };
+                        }
+                      }
+                    };
+                  }
+
+              }
+              else
+              {
+                        notif({
+                          type: "success",
+                          msg:data.message,
+                          position: "right"
+                        });
+              }
+            });
+          
+      }  
+ }]);
+  
+  app.controller('mainCtrl', function($scope,Scopes) {
+
+    // // $scope.datas=Scopes.get('mySpaceList');
+    // // console.log('main ctrl id-->'+$scope.datas[0].mySpaceId);
+    // $scope.map[0]= {center: {latitude: 40.1451, longitude: -99.6680 }, zoom: 4 };
+    // $scope.map[1]= {center: {latitude: 40.1211, longitude: -99.6680 }, zoom: 4 };
+    // $scope.map[2]= {center: {latitude: 40.1211, longitude: -99.6680 }, zoom: 4 };
+    // Scopes.store('mainCtrl',$scope);
+    // $scope.options = {scrollwheel: false};
+    // $scope.coordsUpdates = 0;
+    // $scope.dynamicMoveCtr = 0;
+    // $scope.marker = {
+    //   id: 0,
+    //   coords: {
+    //     latitude: 40.1451,
+    //     longitude: -99.6680
+    //   },
+    //   options: { draggable: false },
+    //   events: {
+    //     dragend: function (marker, eventName, args) {
+    //       $log.log('marker dragend');
+    //       var lat = marker.getPosition().lat();
+    //       var lon = marker.getPosition().lng();
+    //       $log.log(lat);
+    //       $log.log(lon);
+
+    //       $scope.marker.options = {
+    //         draggable: true,
+    //         labelContent: "lat: " + $scope.marker.coords.latitude + ' ' + 'lon: ' + $scope.marker.coords.longitude,
+    //         labelAnchor: "100 0",
+    //         labelClass: "marker-labels"
+    //       };
+    //     }
+    //   }
+    // };
+ });
+
+
+app.controller('dropdown_ctrl',['$scope','$http',function($scope,$http){
+    var token = localStorage.getItem("token"); 
+    console.log("Token"+token);
+    console.log("Angular Working Fine.");
+
+            $http({
+                method  : 'POST',
+                url     : __appurl + "website/getinfo",
+                data    : {token:token},
+                headers : { 'Content-Type': 'application/json' }  
+            })
+            .success(function(data) {
+                console.log("Status: " + data.status); 
+                if(data.status)
+                {
+                    $scope.datas = data;                    
+                }
+                else
+                {
+                    console.log("Message: " + data.message);   
+                }
+            })
+            .error( function (data){
+               console.log(data) ;
+            });
+}]);
+
+
+
+
+</script>
+
+
+<style type="text/css">
+        #map_canvas {
+            height: 200px;
+            width: 400px;
+            margin: 0px;
+        }
+
+        #map_canvas {
+            position: relative;
+        }
+
+        .angular-google-map-container {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+<header>
+ <div class="container-fluid">
+    <div class="col-md-12">
+      <nav class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Mobile Menu</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+          <a class="navbar-brand logo text-uppercase" href="/website/index"><b>Hasty</b>Parking</a> </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <form class="navbar-form navbar-left">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Find your space...">
+              <span class="input-group-btn">
+              <button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>
+              </span> </div>
+          </form>
+          <ul class="nav navbar-nav navbar-right" ng-controller="dropdown_ctrl">  
+            <li><a href="/website/index">Book Parking</a></li>
+            <li><a href="/website/rentspace">Rent Your Space</a></li>
+            <li><a href="/website/freeparking">Free Parking</a></li>
+            <% include ./partials/headerUserProfile %>
+          </ul>
+        </div>
+        <!-- /.navbar-collapse --> 
+      </nav>
+    </div>
+  </div>
+</header>
+<ul class="sub-menu">
+  <li><a href="/website/rentspace">Add Spaces</a></li>
+  <li class="active"><a href="/website/myspacelist">My Spaces</a></li>
+  <li><a href="/website/receivedbookings">Received Booking</a></li>
+  <li><a href="/website/mybooking">My Bookings</a></li>
+</ul>
+<div class="container">
+  <form id="contact" action="" method="post">
+    <div class="card clearfix receivedbooking">
+      <div class="card-title">
+        <h3 class="head text-uppercase">Space List</h3>
+      </div>
+
+      
+      <div class="col-sm-4" ng-repeat="data in datas">
+      
+        <div class="item">
+            <div id="map_canvas" ng-controller="mainCtrl">
+            <ui-gmap-google-map  center="data.map.center" zoom="data.map.zoom" draggable="true" options="options">
+                <ui-gmap-marker coords="data.marker.coords" options="data.marker.options" events="data.marker.events" idkey="data.marker.id">
+                </ui-gmap-marker>
+            </ui-gmap-google-map>
+
+          </div>
+
+          <div class="details">
+            <div class="col-md-12">
+              <h5><a href="my-space-details.html">{{data.mySpaceName}}  {{data.locationName}}</a></h5>
+              <label class="checkbox">
+                <div class="toggle btn btn-success" data-toggle="toggle" style="width: 107px; height: 34px;"><input checked="" data-toggle="toggle" id="active" data-on="Active" data-off="De-active" data-onstyle="success" type="checkbox"><div class="toggle-group"><label class="btn btn-success toggle-on">Active</label><label class="btn btn-default active toggle-off">De-active</label><span class="toggle-handle btn btn-default"></span></div></div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+            
+
+
+      
+          </div>
+        
+  </form>
+</div>
+<!-- Footer File Import Link -->
+<% include ./partials/footer %>
+<!-- Footer Ends -->
+<!-- <script>
+  $(function() {
+    $('#toggle-two').bootstrapToggle({
+      on: 'Active',
+      off: 'De-Active'
+    });
+  })
+</script> -->
+<!-- Bootstrap --> 
+<script src="website/js/jquery-2.1.1.min.js"></script> 
+<script src="website/js/bootstrap.min.js"></script> 
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+</body>
+</html>

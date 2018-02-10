@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-controller="spacedetails" ng-init ="getDetails();">
+<head>
+<title>Payment Stripe</title>
+<link rel='stylesheet' href='/stylesheets/style.css' />
+<script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+<script type="text/javascript">
+var app = angular.module('app',[]);
+var __appurl = "http://localhost:8080/";
+app.controller('spacedetails',['$scope','$http',function($scope,$http)
+{
+      $scope.callpayment=function()
+        {   
+            
+            console.log('called payment inside');
+            $http({
+                  method  : 'POST',
+                  url     : __appurl + "website/payment",
+                  data    : {status:"1"},
+                  headers : { 'Content-Type': 'application/json' }  
+              })
+              .success(function(data)
+              {
+                console.log(data);
+                if(data.status)
+                {
+                  console.log('hello');
+                }
+
+
+              });
+        }
+}]);
+</script>
+  </head>
+  <body>
+  
+  <form action="/website/payment" method="POST">
+  <script
+   src="https://checkout.stripe.com/checkout.js"
+   class= "stripe-button" 
+   data-key ="pk_test_Gww8NXPxrdRMFK1Xd1NRqSg1"
+   data-amount="20000"
+   data-name ="payment details"
+   data-description ="payment through stripe"
+   data-locale = "auto"
+   data-currency = "usd">
+
+  </script>
+  <input type="hidden"  name="chargeAmount" value="30000">
+  </form>
+  
+  </body>
+</html>

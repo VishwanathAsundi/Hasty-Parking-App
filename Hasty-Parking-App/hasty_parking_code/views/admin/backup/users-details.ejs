@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Hasty Parking | Data Tables</title>
+  <!-- Tell the browser to be responsive to screen width -->
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <!-- Bootstrap 3.3.6 -->
+  <link rel="stylesheet" href="admin/css/bootstrap.min.css">
+  <link rel="stylesheet" href="admin/css/styles.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css">
+  <!-- Ionicons -- >
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
+  <!-- DataTables -->
+  <link rel="stylesheet" href="admin/plugins/datatables/dataTables.bootstrap.css">
+  <!-- Theme style -->
+  <link rel="stylesheet" href="admin/css/admin.min.css">
+  <!-- Admin Skins. Choose a skin from the css/skins
+         folder instead of downloading all of them to reduce the load. -->
+  <link rel="stylesheet" href="admin/css/all-skins.min.css">
+   <script type="text/javascript" src="js/angularjs/default/angular.min.js"></script>
+   <script type="text/javascript" src="js/angularjs/user/app.js"></script>
+  
+  <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+  <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</head>
+<body class="hold-transition skin-green sidebar-mini">
+<div class="wrapper">
+  <header class="main-header"> 
+    <!-- Logo --> 
+    <a href="users-list.ejs" class="logo">
+    <!-- logo for regular state and mobile devices --> 
+    <span class="logo-lg"><b>Hasty</b>Parking</span> </a> 
+    <!-- Header Navbar: style can be found in header.less -->
+    <nav class="navbar navbar-static-top">
+      <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+        <span class="sr-only">Toggle navigation</span>
+      </a> 
+      <!-- Sidebar toggle button-->
+      <div class="navbar-custom-menu">
+        <ul class="nav navbar-nav">
+          <!-- User Account: style can be found in dropdown.less -->
+          <li class="dropdown user user-menu"> <a href="#" class="dropdown-toggle" data-toggle="dropdown"> <img src="admin/img/user-160x160.jpg" class="user-image" alt="User Image"> <span class="hidden-xs">Alexander Pierce</span> </a>
+            <ul class="dropdown-menu">
+              <!-- User image -->
+              <li class="user-header"> <img src="admin/img/user-160x160.jpg" class="img-circle" alt="User Image">
+                <p>Alexander Pierce<small>Admin</small></p>
+              </li>
+              <!-- Menu Footer-->
+              <li class="user-footer">
+                <div class="pull-left"> <a href="#" class="btn btn-default btn-flat">My Profile</a> </div>
+                <div class="pull-right"> <a href="index.ejs" class="btn btn-default btn-flat">Sign out</a> </div>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+  <!-- Left side column. contains the logo and sidebar -->
+  <aside class="main-sidebar"> 
+    <!-- sidebar: style can be found in sidebar.less -->
+    <section class="sidebar"> 
+      <!-- Sidebar user panel -->
+      <div class="user-panel">
+        <div class="pull-left image"> <img src="admin/img/user-160x160.jpg" class="img-circle" alt="User Image"> </div>
+        <div class="pull-left info">
+          <p>Alexander Pierce</p>
+          <a href="index.ejs" class="btn btn-block btn-danger btn-xs">Sign out </a> </div>
+      </div>
+      <!-- sidebar menu: : style can be found in sidebar.less -->
+      <ul class="sidebar-menu">
+        <li class="header">MAIN NAVIGATION</li>
+        <li class="active"> <a href="users-list.ejs"> <i class="fa fa-users"></i> <span>Users</span> </a> </li>
+        <li class="treeview active"> <a href="#"> <i class="fa fa-files-o"></i> <span>Verification Request</span> <span class="pull-right-container"> <span class="fa fa-angle-left pull-right"></span> </span> </a>
+          <ul class="treeview-menu">
+            <li><a href="verify_new.ejs"><i class="fa fa-circle-o"></i> New</a></li>
+            <li><a href="verify_onprogress.ejs"><i class="fa fa-circle-o"></i> On Progress</a></li>
+            <li><a href="verify_approved_list.ejs"><i class="fa fa-circle-o"></i> Approved List</a></li>
+            <li><a href="verify_rejected_list.ejs"><i class="fa fa-circle-o"></i> Rejected List</a></li>
+          </ul>
+        </li>
+        <li> <a href="violation_list.ejs"> <i class="fa fa-edit"></i> <span>Violation</span> </a> </li>
+      </ul>
+    </section>
+    <!-- /.sidebar --> 
+  </aside>
+  
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>User Profile</h1>
+      <ol class="breadcrumb">
+        <li><i class="fa fa-dashboard"></i> Home</li>
+        <li><a href="users-list.ejs">Users list</a></li>
+        <li class="active">User profile</li>
+      </ol>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+
+      <div class="row">
+        <div class="col-md-3">
+          <!-- Profile Image -->
+          <div class="box box-success">
+            <div class="box-body box-profile">
+              <img class="profile-user-img img-responsive img-circle" src="admin/img/user.png" alt="User profile picture">
+
+              <h3 class="profile-username text-center">Customer Name</h3>
+              <p class="text-muted text-center margin-bottom-none">Balance</p>
+              <p class="text-center balance"><i class="fa fa-dollar fa-2x"></i><span>0.00</span></p>
+              <a href="#" class="btn btn-success btn-block"><b>Add Credit</b></a>
+              <ul class="list-group list-group-unbordered">
+                <li class="list-group-item">
+                  <b>Email</b> <a class="pull-right">name@email.com</a>
+                </li>
+                <li class="list-group-item">
+                  <b>Phone</b> <a class="pull-right">+91-xxxxx xxxxx</a>
+                </li>
+                <li class="list-group-item">
+                  <b>Active From</b> <span class="pull-right">08-06-2017</span>
+                </li>
+                <li class="list-group-item">
+                  <b>No. of Booking</b> <span class="pull-right">17</span>
+                </li>
+                <li class="list-group-item">
+                  <b>No. of Violations</b> <span class="pull-right">08</span>
+                </li>
+              </ul>
+            </div>
+            <!-- /.box-body -->
+          </div>
+          <!-- /.box -->
+        </div>
+        <!-- /.col -->
+        <div class="col-md-9">
+          <div class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+              <li class="active"><a href="#card" data-toggle="tab">Card Details</a></li>
+              <li><a href="#bank" data-toggle="tab">Bank Details</a></li>
+              <li><a href="#vehicle_detail" data-toggle="tab">Vehicle Details</a></li>
+              <li><a href="#c_password" data-toggle="tab">Change Password</a></li>
+            </ul>
+            <div class="tab-content">
+              <div class="active tab-pane" id="card">
+                <h4 class="text-muted"><i class="fa fa-credit-card" aria-hidden="true"></i>STORED CARDS</h4>
+                <div class="row margin-top-30">
+	                <div class="col-sm-5">
+                    <div class="box box-widget widget-user-2">
+                      <!-- Add the bg color to the header using any of the bg-* classes -->
+                      <div class="widget-user-header bg-yellow">
+                        <div class="widget-user-image text-center">
+                          <img class="img-circle" src="admin/img/card.png" alt="">
+                        </div>
+                      </div>
+                      <div class="box-footer no-padding">
+                        <ul class="nav nav-stacked card">
+                          <li><a href="#" class="no-link">Card Type <span class="pull-right"><strong>Visa</strong></span></a></li>
+                          <li><a href="#" class="no-link">Card Number <span class="pull-right"><strong>1234 5432 6875 9815</strong></span></a></li>
+                          <li><a href="#" class="no-link">Expiry Date <span class="pull-right"><strong>12/2020</strong></span></a></li>
+                          <li><a href="#" class="text-center">Delete Card</a></li>
+                        </ul>
+                      </div>
+                  	</div>
+                	</div>
+                </div>
+              </div>
+              <div class="tab-pane" id="bank">
+                <h4 class="text-muted"><i class="fa fa-bank" aria-hidden="true"></i> BANK ACCOUNTS</h4>
+                <div class="row margin-top-30">
+	                <div class="col-sm-5">
+                    <div class="box box-widget widget-user-2">
+                      <!-- Add the bg color to the header using any of the bg-* classes -->
+                      <div class="widget-user-header bg-primary">
+                        <div class="widget-user-image text-center">
+                          <img class="img-circle" src="admin/img/bank.png" alt="">
+                        </div>
+                      </div>
+                      <div class="box-footer no-padding">
+                        <ul class="nav nav-stacked card">
+                          <li><a href="#" class="no-link">Bank<span class="pull-right"><strong>ICICI</strong></span></a></li>
+                          <li><a href="#" class="no-link">Account Number <span class="pull-right"><strong>xxxxxxxxxxxxx568</strong></span></a></li>
+                          <li><a href="#" class="no-link">IFSC Code<span class="pull-right"><strong>ICICI0254</strong></span></a></li>
+                          <li><a href="#" class="text-center">Delete Bank Account</a></li>
+                        </ul>
+                      </div>
+                  	</div>
+                	</div>
+                </div>
+              	
+              </div>
+              <!-- /.tab-pane -->
+              <div class="tab-pane" id="vehicle_detail">
+                <h4 class="text-muted"><i class="fa fa-car" aria-hidden="true"></i> Vehicle Details</h4>
+                <div class="row margin-top-30">
+	                <div class="col-sm-5">
+                    <div class="box box-widget widget-user-2">
+                      <!-- Add the bg color to the header using any of the bg-* classes -->
+                      <div class="widget-user-header bg-primary">
+                        <div class="widget-user-image text-center">
+                          <img class="img-circle" src="admin/img/car.png" alt="">
+                        </div>
+                      </div>
+                      <div class="box-footer no-padding">
+                        <ul class="nav nav-stacked card">
+                          <li><a href="#" class="no-link">Vehicle Number <span class="pull-right"><strong>MA-02116 2612</strong></span></a></li>
+                          <li><a href="#" class="no-link">Insurance Number <span class="pull-right"><strong>FA 1234584</strong></span></a></li>
+                          <li><a href="#" class="no-link">Vehicle Model<span class="pull-right"><strong>Ferrari</strong></span></a></li>
+                          <li><a href="#" class="text-center">Delete Vehicle</a></li>
+                        </ul>
+                      </div>
+                  	</div>
+                	</div>
+                </div>
+              </div>
+              <!-- /.tab-pane -->
+              <div class="tab-pane" id="c_password">
+                <form class="form-horizontal">
+                  <div class="form-group">
+                    <label for="cur_pass" class="col-sm-4 control-label">Current Password</label>
+
+                    <div class="col-sm-8">
+                      <input type="password" class="form-control" id="cur_pass" placeholder="Current Password">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="new_pass" class="col-sm-4 control-label">New Password</label>
+
+                    <div class="col-sm-8">
+                      <input type="password" class="form-control" id="new_pass" placeholder="New Password">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="c_pass" class="col-sm-4 control-label">Conform Password</label>
+
+                    <div class="col-sm-8">
+                      <input type="password" class="form-control" id="c_pass" placeholder="Retype Password">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="col-sm-offset-4 col-sm-8">
+                      <button type="submit" class="btn btn-danger">Submit</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <!-- /.tab-pane -->
+            </div>
+            <!-- /.tab-content -->
+          </div>
+          <!-- /.nav-tabs-custom -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+
+    </section>
+    <!-- /.content -->
+  </div>
+  <!-- /.content-wrapper -->
+  <footer class="main-footer">
+    <div class="pull-right hidden-xs"> <b>Version</b> 1.0 </div>
+    <strong>Copyright &copy; 2017 <a href="#">Hasty Parking</a>.</strong> All rights reserved. </footer>
+</div>
+<!-- ./wrapper --> 
+<script>
+  $.widget.bridge('uibutton', $.ui.button);
+</script> 
+<!-- jQuery 2.2.3 --> 
+<script src="admin/plugins/jQuery/jquery-2.2.3.min.js"></script> 
+<!-- Bootstrap 3.3.6 --> 
+<script src="admin/js/bootstrap.min.js"></script> 
+<!-- DataTables --> 
+<script src="admin/plugins/datatables/jquery.dataTables.min.js"></script> 
+<script src="admin/plugins/datatables/dataTables.bootstrap.min.js"></script> 
+<script src="admin/js/app.min.js"></script>
+
+<script>
+  $(function () {
+    $('#user_list').DataTable({
+      "paging": true,
+      "lengthChange": true,
+      "searching": true,
+      "ordering": true,
+      "info": true,
+      "autoWidth": false
+    });
+  });
+</script>
+</body>
+</html>

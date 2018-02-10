@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Hasty Parking | Space Details page</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/bootstrap-datetimepicker.min.css" rel="stylesheet" media="screen">
+<link href="website/css/styles.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="website/css/lightbox.min.css">
+<link rel="stylesheet" href="website/css/owl.carousel.min.css">
+<link rel="stylesheet" href="website/css/owl.theme.default.min.css">
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/app.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/dropdown.js"></script>
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+</head>
+
+<body>
+<header>
+  <div class="container-fluid">
+    <div class="col-md-12">
+      <nav class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Mobile Menu</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+          <a class="navbar-brand logo text-uppercase" href="/website/index"><b>Hasty</b>Parking</a> </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <form class="navbar-form navbar-left">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Find your space...">
+              <span class="input-group-btn">
+              <button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>
+              </span> </div>
+          </form>
+          <ul class="nav navbar-nav navbar-right" ng-controller="dropdown_ctrl">  
+            <li><a href="/website/index">Book Parking</a></li>
+            <li class="active"><a href="/website/rentspace">Rent Your Space</a></li>
+            <li><a href="/website/freeparking">Free Parking</a></li>
+            <% include ./partials/headerUserProfile %>
+          </ul>
+        </div>
+        <!-- /.navbar-collapse --> 
+      </nav>
+    </div>
+  </div>
+</header>
+<ul class="sub-menu">
+  <li><a href="/website/rentspace">Add Spaces</a></li>
+  <li class="active"><a href="/website/myspacelist">My Spaces</a></li>
+  <li><a href="/website/receivedbookings">Received Booking</a></li>
+  <li><a href="/website/bookedhistory">Booked History</a></li>
+</ul>
+
+<div class="container-fluid">
+  <h3>Car Park on Bloomsbury Square <span class="pull-right rating"><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-half-empty"></i><i class="fa fa-star-o"></i> Bassed on <a href="#">136 Reviews</a></span> </h3>
+  <p class="text-muted">411 W 55th St, New York, NY 10019</p>
+  <div class="map-details col-sm-12">
+
+  </div>
+  <div class="row">
+    <div class="col-sm-8">
+      <div class="card">
+        <div class="card-block">
+          <h4 class="card-title">Summary</h4>
+          <div class="col-sm-3">
+            <div class="panel panel-success">
+              <div class="panel-heading"><strong>Parking</strong></div>
+              <div class="panel-body"> Driveway</div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-warning">
+              <div class="panel-heading"><strong>Aminities</strong></div>
+              <div class="panel-body"> CCTV, Covered</div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-info">
+              <div class="panel-heading"><strong>Type</strong></div>
+              <div class="panel-body"> Lawn </div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-danger">
+              <div class="panel-heading"><strong>Space</strong></div>
+              <div class="panel-body">Single Space</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-block">
+          <h4 class="card-title">Description</h4>
+          <p>Enter this location at 110 W 44th St. You can also access the alternate garage entrance at 113 W 43rd St. This facility is operated by Quik Park, and is known as the "1133 Garage". It is located on the right-hand (south) side of W 44th St. (a one-way eastbound street) between 6th Ave. and 7th Ave. The entrance is DIRECTLY across the street from the Belasco Theater. NOTE: This street is sometimes inaccessible due to road closures. If you are unable to access the garage, please call our heroes (312-566-7768) and they'll reroute you. NOTE: This is a high volume garage that gets very busy because of the surrounding theaters. If you are parking here for a show, we recommend arriving to park at least 45 minutes prior to showtime.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="card reserv-details">
+        <div class="card-block">
+          <h4 class="card-title bg-primary radius text-center">Other Space List</h4>
+          <ul class="list-group">
+            <li class="list-group-item"><a href="#">Title of the Space 1</a></li>
+            <li class="list-group-item"><a href="#">Title of the Space 2</a></li>
+            <li class="list-group-item"><a href="#">Title of the Space 3</a></li>
+            <li class="list-group-item"><a href="#">Title of the Space 4</a></li>
+            <li class="list-group-item"><a href="#">Title of the Space 5</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Footer File Import Link -->
+<% include ./partials/footer %>
+<!-- Footer Ends -->
+<!-- Bootstrap --> 
+<script src="website/js/jquery-2.1.1.min.js"></script> 
+<script src="website/js/lightbox-plus-jquery.min.js"></script> 
+<script src="website/js/bootstrap-datetimepicker.min.js"></script> 
+<script src="website/js/bootstrap.min.js"></script> 
+<script src="website/js/owl.carousel.min.js"></script>
+<script type="text/javascript">
+	$('.form_datetime').datetimepicker({
+		weekStart: 1,
+		todayBtn: 1,
+		autoclose: 1,
+		todayHighlight: 1,
+		startView: 2,
+		forceParse: 0,
+		showMeridian: 1
+	});
+</script>
+<script type="text/javascript">
+	$('.change-date').click(function(){
+		$('#date-change-form').slideDown("slow");
+		$('.change-date').css("display","none");
+	});
+	$('.owl-carousel').owlCarousel({
+    loop:true,
+    margin:10,
+    responsiveClass:true,
+		dots:0,
+    responsive:{
+        0:{
+            items:1,
+            nav:true
+        },
+        600:{
+            items:3,
+            nav:false
+        },
+        1000:{
+            items:5,
+            nav:true,
+            loop:false
+        }
+    }
+})
+</script>
+</body>
+</html>

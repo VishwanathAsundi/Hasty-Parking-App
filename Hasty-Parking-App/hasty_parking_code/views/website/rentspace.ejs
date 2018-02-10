@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-controller="rent_space_ctrl">
+<head>
+<meta charset="utf-8">
+<title>Hasty Parking | Rent on your space</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/bootstrap-datetimepicker.min.css" rel="stylesheet" media="screen">
+<link href="website/css/styles.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/app.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/rent_space.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/dropdown.js"></script>
+<!-- Bootstrap --> 
+<script src="website/js/jquery-2.1.1.min.js"></script> 
+<script src="website/js/bootstrap.min.js"></script>
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zumper-angular-payments/1.0.7/angular-payments.js"></script>
+  <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+
+<script>
+    function initAutocomplete() {
+
+      var input = document.getElementById('location');
+      var searchBox = new google.maps.places.SearchBox(input);
+      searchBox.addListener('places_changed', function() {
+        var places = searchBox.getPlaces();
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode( {'address': places[0].formatted_address}, function(results, status) {
+          if (status == 'OK') {
+            var lat = results[0].geometry.location.lat();
+            var lng = results[0].geometry.location.lng();
+            console.log("Latitude"+lat);
+            console.log("Longitude"+lng);
+            $('.latlng').attr("latitude",lat);
+            $('.latlng').attr("longitude",lng);         
+          }
+          else 
+          {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+        if (places.length == 0) {
+          return;
+        }
+       });
+    }
+  </script>
+</head>
+<body>
+
+<header>
+   <div class="container-fluid">
+    <div class="col-md-12">
+      <nav class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Mobile Menu</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+          <a class="navbar-brand logo text-uppercase" href="/website/index"><b>Hasty</b>Parking</a> </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right" ng-controller="dropdown_ctrl">  
+            <li><a href="/website/index">Book Parking</a></li>
+            <li class="active"><a href="/website/rentspace">Rent Your Space</a></li>
+            <li><a href="/website/freeparking">Free Parking</a></li>
+            <% include ./partials/headerUserProfile %>
+          </ul>
+        </div>
+        <!-- /.navbar-collapse --> 
+      </nav>
+    </div>
+  </div>
+
+</header>
+<div class="container-fluid main">
+  <form novalidate name="spaceForm" method="post">
+  <div class="card clearfix col-sm-12">
+    <div class="card-title"><h3 class="head text-uppercase">Rent Your Space</h3></div>
+   
+    <div class="col-sm-6">
+      <div class="form-group col-sm-12">
+        <label class="control-label requiredField" for="space_name">Title of the space<span class="asteriskField">* </span> </label>
+        <input class="form-control" id="Title" required  ng-model="space.Title" name="Title" type="text"/>
+        <span style="color:red" ng-show="spaceForm.Title.$touched && spaceForm.Title.$invalid">*Title of the space is required.</span>
+      </div>
+      <div class="form-group col-sm-12">
+        <label class="control-label requiredField" for="space_name">Description<span class="asteriskField">* </span> </label>
+        <textarea value="" class="form-control" id="description" required ng-model="space.Description" name="Description" rows="3"></textarea>        
+        <span style="color:red" ng-show="spaceForm.Description.$touched && spaceForm.Description.$invalid">*Please provide some Description about your space.</span>
+      </div>
+    </div>
+<div class="col-sm-6">
+<div class="form-group col-sm-12">
+        <label class="control-label requiredField" for="space_name">Address<span class="asteriskField">* </span> </label>
+         <input type="text" id="location" name="location" class="col-md-4 col-sm-4 col-xs-12 form-control" placeholder="Enter your Space Address"  ng-model="space.location" required>
+             <input type="hidden" id="lat" ng-model="space.lat"  value="" name="lat">
+             <input type="hidden" id="lng" ng-model="space.lng" value="" name="lng">       
+        <span style="color:red" ng-show="spaceForm.location.$touched && spaceForm.location.$invalid">Please provide Address of  your space</span>
+      </div>
+    </div>
+    <!--  <div class="form-group col-sm-4">
+        <input class="form-control" ng-pattern="/^[a-zA-Z]*$/" id="city" name="city" required ng-model="space.city" type="text"  placeholder="City" />
+        <span class="help-block" style="color:red" ng-show="spaceForm.city.$touched && spaceForm.city.$invalid">*Enter the City.</span>
+        <span class="help-block" style="color:red"  ng-show="spaceForm.city.$error.pattern && spaceForm.city.$invalid">*City should contains only Alphabets.</span>
+      </div>
+      <div class="form-group col-sm-3">
+        <select class="form-control" id="cityState" name="cityState" ng-model="space.cityState" ng-options="option.state for option in selectState track by option.state" required>
+          <option value="">Select Your State</option>                   
+        </select>
+        <span class="help-block" style="color:red" ng-show="spaceForm.cityState.$touched && spaceForm.cityState.$invalid">*Select the State.</span>
+      </div>
+      <div class="form-group col-sm-3">
+        <input class="form-control" required id="zipcode" ng-pattern="/^(\d{5}(-\d{4})?|[A-Z]\d[A-Z] *\d[A-Z]\d)$/" ng-model="space.zipcode" name="zipcode" type="text"  placeholder="Zipcode" />
+        <span style="color:red;" class="help-block" ng-show="spaceForm.zipcode.$error.pattern">*Enter a 5-digit valid Zipcode</span>
+        <span class="help-block" style="color:red" ng-show="spaceForm.zipcode.$touched && spaceForm.zipcode.$invalid">*Please provide 5-digit Zipcode.</span>
+      </div> -->
+      <!-- <div class="form-group col-sm-2 getmap">
+        <a data-target="#map" data-toggle="modal" class="btn btn-success"><i class="fa fa-map-marker" ></i></a>
+      </div>-->
+     <div class="col-sm-6">
+      <div class="form-group col-sm-12">
+        <label class="control-label requiredField" for="dimensionOfSpace">Dimension Of Space<span class="asteriskField">* </span> </label>
+        <input class="form-control" id="dimensionOfSpace" ng-model="space.dimensionOfSpace" name="dimensionOfSpace" type="number" placeholder="Dimension Of Space in sqft" required/>
+        <span style="color:red" ng-show="spaceForm.addrl1.$touched && spaceForm.addrl1.$invalid">*Please Provide Dimension Of Your Space.</span>
+      </div>
+      </div>
+    <div class="col-sm-12">
+      <div class="form-group col-sm-3">
+        <label class="control-label" for="owner">I am a</label>
+        <select class="form-control" ng-model="space.OwnerType" name="OwnerType" id="OwnerType" ng-options="option.owner for option in ownerType track by option.owner" required>
+          <option value="">Select Ownner Type</option>          
+        </select>
+        <span class="help-block" style="color:red" ng-show="spaceForm.OwnerType.$touched && spaceForm.OwnerType.$invalid">*Please provide Owner Type.</span>
+      </div>
+      <div class="form-group col-sm-3">
+        <label class="control-label" for="space">Space</label>
+        <select class="form-control" ng-model="space.SpaceType" name="SpaceType" id="SpaceType" required ng-options="option.space for option in spaceType track by option.space">
+          <option value="" >Select Space Type</option>          
+          <!-- <option value="event">Event Parking</option> -->
+        </select>
+        <span class="help-block" style="color:red" ng-show="spaceForm.SpaceType.$touched && spaceForm.SpaceType.$invalid">*Please provide Space Type.</span>
+      </div>
+      <div class="form-group col-sm-3" id="numberOfSpaces">
+        <label class="control-label" for="numberofspace">Number of Space</label>
+        <input type="number" value="{{val}}" id="nspaces" min="{{space.min}}" name="nspaces" ng-model="space.nspaces" placeholder="2" class="form-control" >
+        <span class="help-block" style="color:red" ng-show="spaceForm.nspaces.$touched && spaceForm.nspaces.$invalid">*Please Provide Multiple spaces more than 1.</span>
+      </div>
+      <div class="form-group col-sm-3">
+        <label class="control-label" for="space-type">Parking Type</label>
+        <select class="form-control" name="parkingType" ng-model="space.parkingType" id="parkingType" ng-options="option.park for option in parkingType track by option.park" required>
+          <option value="">Select Parking Type</option>          
+        </select>
+        <span class="help-block" style="color: red" ng-show="spaceForm.parkingType.$touched && spaceForm.ParkingType.$invalid">*Select your parking type</span>
+      </div>
+      <div class="form-group col-sm-4">
+        <label class="control-label" for="delineated">Is space clearly delineated?</label>
+        <select class="form-control" name="SpaceDelinated" ng-model="space.SpaceDelinated" id="SpaceDelinated" ng-options="option.delinated for option in spaceDelinated track by option.delinated" required>
+          <option value="">Is Your Space Delinated?</option>
+        </select>
+        <span class="help-block" style="color: red" ng-show="spaceForm.SpaceDelinated.$touched && spaceForm.SpaceDelinated.$invalid">*Select your Space Delinated?</span>
+      </div>
+       <div class="form-group col-sm-4">
+        <label class="control-label" for="parking-space">Amenities</label>
+        <a href="#" class="form-control" data-toggle="dropdown" placeholder="">Select Your Amenities<span class="caret"></span></a>
+<ul class="dropdown-menu form-control" >
+  <li><a href="#" class="small" data-value="Indoor" tabIndex="-1"><input ng-model="space.amenities.indoor" type="checkbox" value="Indoor"/>&nbsp;Indoor</a></li>
+  <li><a href="#" class="small" data-value="Outdoor" tabIndex="-1"><input ng-model="space.amenities.outdoor" type="checkbox" value="Outdoor"/>&nbsp;Outdoor</a></li>
+  <li><a href="#" class="small" data-value="CCTV" tabIndex="-1"><input ng-model="space.amenities.cctv" type="checkbox" value="CCTV"/>&nbsp;CCTV</a></li>
+  <li><a href="#" class="small" data-value="Covered" tabIndex="-1"><input ng-model="space.amenities.covered" type="checkbox" value="Covered"/>&nbsp;Covered</a></li>
+</ul>
+      <!--  <select  class="form-control" multiple name="Amenities" ng-model="space.Amenities" id="Amenities" required  ng-options="option.amenities for option in Amenities track by option.amenities">
+          <option value="">Select Amenities</option>          
+          </select> -->
+          <span class="help-block" style="color: red" ng-show="spaceForm.Amenities.$touched && spaceForm.Amenities.$invalid">*Select your Space Amenities</span>
+      </div>
+      <div class="form-group col-sm-4">
+        <label class="control-label" for="surface-material">Surface Material</label>
+        <select class="form-control" name="material" ng-model="space.material"  id="material" required ng-options="option.material for option in  surfaceMaterial track by option.material">
+          <option value="">Select Your Surface Material</option>         
+        </select>
+        <span class="help-block" style="color: red" ng-show="spaceForm.material.$touched && spaceForm.material.$invalid">*Choose your Surface Material</span>
+      </div>       
+    </div>
+  </div>
+  <!--
+  <div class="card clearfix col-sm-12">
+    <div class="card-title"><h3 class="head text-uppercase">Pricing Details</h3></div>
+    <div class="col-md-12">
+      <div class="form-group col-sm-6">
+        <label class="control-label" for="priceMySpace">How do I price my space?</label>
+        <select class="form-control" required id="cityState2" name="cityState2" ng-model="space.cityState2" ng-options="option.state for option in selectState track by option.state">
+          <option value="">Select state</option>         
+        </select>
+        <span class="help-block" style="color: red" ng-show="spaceForm.cityState2.$touched && spaceForm.cityState2.$invalid">*Choose your State</span>          
+        <span class="help-block">Average hourly/monthly rates for your metropolitan area, please adjust accordingly for your specific location</span>        
+      </div> -->
+      <div class="form-group col-sm-6">
+        <label class="control-label requiredField" for="height">Height Restriction <small> (If any, please describe here)</small></label>
+        <input class="form-control" id="HeightRestriction" required name="HeightRestriction" type="text" ng-model="space.HeightRestriction"  placeholder="Enter here...."/>  
+        <span class="help-block" style="color: red" ng-show="spaceForm.HeightRestriction.$touched && spaceForm.HeightRestriction.$invalid">*Enter this field</span>
+      </div>
+    </div>
+    <section>
+    <div class="col-md-12">
+      <div class="form-group col-sm-3">
+        <label class="control-label requiredField" for="hour">Hourly<span class="asteriskField">* </span> </label>
+        <div class="input-group"> <span class="input-group-addon"><i class="fa fa-dollar"></i></span>
+          <input class="form-control" ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/" required id="Hourly" name="Hourly" type="text" ng-model="space.Hourly" placeholder="0.00"/>                    
+        </div>
+        <span class="help-block" style="color: red" ng-show="spaceForm.Hourly.$touched && spaceForm.Hourly.$invalid">*Enter this field
+          </span>
+          <span class="help-block" style="color:red"  ng-show="spaceForm.Hourly.$error.pattern && spaceForm.Hourly.$invalid">*Price should be in 0.00 format. Enter two digit after decimal.</span>
+      </div>
+      <div class="form-group col-sm-3">
+        <label class="control-label requiredField" for="daily">Daily<span class="asteriskField">* </span> </label>
+        <div class="input-group"> <span class="input-group-addon"><i class="fa fa-dollar"></i></span>
+          <input class="form-control" ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/" required id="Daily" name="Daily"  ng-model="space.Daily" type="text" placeholder="0.00"/>                
+        </div>
+            <span class="help-block" style="color: red" ng-show="spaceForm.Daily.$touched && spaceForm.Daily.$invalid">*Enter this field</span>
+        <span class="help-block" style="color:red"  ng-show="spaceForm.Daily.$error.pattern && spaceForm.Daily.$invalid">*Price should be in 0.00 format only.Enter two digit after decimal.</span>
+      </div>
+      <div class="form-group col-sm-3">
+        <label class="control-label requiredField" for="weekly">Weekly<span class="asteriskField">* </span> </label>
+        <div class="input-group"> <span class="input-group-addon"><i class="fa fa-dollar"></i></span>
+          <input class="form-control" id="Weekly" required ng-model="space.Weekly"  name="Weekly" type="text" placeholder="0.00" ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/"/>                  
+        </div>
+        <span class="help-block" style="color:red"  ng-show="spaceForm.Weekly.$error.pattern && spaceForm.Weekly.$invalid">*Price should be in 0.00 format only.Enter two digit after decimal.</span>
+        <span class="help-block" style="color: red" ng-show="spaceForm.Weekly.$touched && spaceForm.Weekly.$invalid">*Enter this field</span>       
+      </div>
+      <div class="form-group col-sm-3">
+        <label class="control-label requiredField" for="monthly">Monthly<span class="asteriskField">* </span> </label>
+        <div class="input-group"><span class="input-group-addon"><i class="fa fa-dollar"></i></span>
+          <input class="form-control" required id="Monthly" ng-model="space.Monthly" name="Monthly" type="text"  placeholder="0.00" ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/"/>                     
+        </div>
+        <span class="help-block" style="color: red" ng-show="spaceForm.Monthly.$touched && spaceForm.Monthly.$invalid">*Enter this field</span>
+         <span class="help-block" style="color:red"  ng-show="spaceForm.Monthly.$error.pattern && spaceForm.Monthly.$invalid">*Price should be in 0.00 format only.Enter two digit after decimal.</span>
+      </div>
+      </section>
+      <div class="form-group col-sm-6">
+        <label class="control-label requiredField" for="violator">Do you want to rent your space to a previous violator<span class="asteriskField">* </span> </label>
+        <div class="radio">
+          <label class="radio">
+            <input name="rpv" type="radio" ng-model="space.rpv" value="yes" required />
+            Yes</label>
+          <label class="radio">
+            <input name="rpv"  ng-model="space.rpv" type="radio" value="no" required />
+            No</label>
+            <span class="help-block" style="color: red" ng-show="spaceForm.rpv.$touched && spaceForm.rpv.$invalid">*Enter this field</span> 
+        </div>
+      </div>
+      <div class="col-sm-12">
+        <label class="checkbox-inline" for="terms">
+          <input type="checkbox" name="terms" required  ng-model="space.terms" id="terms" value="yes">          
+          I accept your <a href="#">Terms and conditions</a> </label>
+            <span class="help-block" style="color: red" ng-show="spaceForm.terms.$touched && spaceForm.terms.$invalid">*You didn't Accept the Terms and Conditions of Hasty parking</span> 
+      </div>
+     
+    </div>
+  </div>
+  <div class="card clearfix col-sm-12" id="orderPane">
+    <div class="card-title">
+      <h3 class="head text-uppercase">Order Space ID Marker</h3>
+    </div>
+    <div class="col-md-12">
+      <p>Order Space ID Marker” $29.95, Required for all HP Listings prior to going live, all listings will need to post a photo of their space(s) on our site, clearly showing the parking space with the Space ID Marker, installed.  Markers should be installed in the front, driver’s side corner of the parking space.  The number on your marker will become the ID number for each space you list.  Once photos are submitted and approved (same day), your space will go LIVE on our site.</p>
+      <p>
+        <a data-target="#payment" data-toggle="modal" ng-disabled="spaceForm.$invalid" class="btn btn-success">Order Space ID Maker</a>
+      </p>
+    </div>
+  </div>
+</div>
+<div id="payment" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Payment Option</h4>
+      </div>
+      <div class="modal-body" style="overflow: hidden;">
+        <div class="radio" style="margin-bottom: 20px;">
+          <label class="radio">
+           <input id="marker" name="marker" type="radio" ng-model="space.markerType" value="spacemarker" required/>
+            $19.95  for the Space Marker</label>
+            <label class="radio">
+            <input id="marker" name="marker" type="radio" ng-model="space.markerType" value="spotsticker" required/>
+            $4.95 for the Spot Sticker</label>
+            <span class="help-block" style="color: red" ng-show="spaceForm.markerType.$touched && spaceForm.markerType.$invalid">*Enter this field</span> 
+        </div>
+        <div class="form-group col-sm-12">
+        <input class="form-control" required id="deliveryAddress" ng-model="space.deliveryAddress" name="deliveryAddress" type="text"  placeholder="Enter Your Address" />
+        <span class="help-block" style="color: red" ng-show="spaceForm.deliveryAddress.$touched && spaceForm.deliveryAddress.$invalid">*Enter Your City</span>  
+        <span class="help-block" style="color:red"  ng-show="spaceForm.deliveryAddress.$error.pattern && spaceForm.deliveryAddress.$invalid">*City should contains only Alphabets.</span>
+      </div>
+      <div class="form-group col-sm-6">
+        <select class="form-control" value="" id="space.cityState3" name="space.cityState3" ng-model="space.cityState3" ng-options="option.state for option in selectState track by option.state">
+          <option value="">Select Your State</option>         
+        </select>
+      </div>
+      <div class="form-group  col-sm-6" >
+        <input class="form-control" id="zip2" name="zip2" ng-model="space.zip2" type="text"  placeholder="Zipcode" required ng-pattern="/^(\d{5}(-\d{4})?|[A-Z]\d[A-Z] *\d[A-Z]\d)$/"/>
+       <!--  <span style="color:red;" class="help-block" ng-show="spaceForm.zip2.$error.pattern">*Enter a 5-digit valid Zipcode</span>
+        <span class="help-block" style="color:red" ng-show="spaceForm.zip2.$touched && spaceForm.zip2.$invalid">*Please provide 5-digit Zipcode.</span> -->
+      </div>
+      </div>
+      <div class="modal-footer">
+      <!-- form stripe-form="stripeCallback">
+    <input ng-model="number" placeholder="Card Number" payments-format="card" />
+<input ng-model="expiry" placeholder="Expiration" payments-format="expiry"/>
+<input ng-model="cvc" placeholder="CVC" payments-format="cvc" />
+    <button type="submit">Submit</button>
+</form --><!-- form action="/admin/payment" method="post">
+  <script
+   src="https://checkout.stripe.com/checkout.js"
+   class= "stripe-button"
+   data-key ="pk_test_Gww8NXPxrdRMFK1Xd1NRqSg1"
+   data-amount="200"
+   data-name ="payment details"
+   data-description ="payment through stripe"
+   data-locale = "auto"
+   data-currency = "gdp"
+   >
+  </script -->
+  <form stripe-form="stripeCallback" name="checkoutForm">
+         <button id="button" type="button" latitude ="" longitude = "" class="btn btn-success latlng " ng-click="rentSpace($event)" data-dismiss="modal">Pay Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="map" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-body" id="map_123" style="width: 100%; height:400px ">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-dismiss="modal">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+  </form>
+</div>
+<!-- Footer File Import Link -->
+<% include ./partials/footer %>
+<!-- Footer Ends -->
+<script>
+$(document).ready(function () { 
+    // myMap();
+    $(".getmap").click(function(){
+    // alert('asdasd');
+    
+    setTimeout(function(){
+      myMap();
+    },2000);  
+  });  
+});
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyClBSroLa7RsLQh5eYmLrzGhxS3vLniS0o&libraries=places&callback=initAutocomplete"
+ async defer></script>
+</body>
+
+<!-- Script to hide and show the Input tag for Number of Spaces.
+Hide if Select option of Space type is single else show the Number of Spaces tag for Input Number of spaces.
+Selecion based on Select option of Space type -->
+
+<script type="text/javascript">
+
+$(document).ready(function () {
+          $("#numberOfSpaces").hide();
+         dispalyNumberOfSpces();
+  
+          $("#SpaceType").change(function () {
+          dispalyNumberOfSpces();
+     });
+});
+
+function dispalyNumberOfSpces() {
+  switch(true){
+    case ($("#SpaceType").val() === "single"):      
+        $("#numberOfSpaces").hide();
+      
+        break;
+    case($("#SpaceType").val() === "multiple"):
+           $("#numberOfSpaces").show();
+          $("#nspaces").attr("required", true)
+           break;
+           default: console.log("Working")
+        }
+
+}
+
+</script>
+<!-- Script Ends -->
+<script type="text/javascript">
+$(document).ready(function () {
+  if($("#marker").val() === "spacemarker")
+  {
+    $("#")
+  }
+})
+
+</script>
+
+</html>

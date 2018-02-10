@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" ng-app="app">
+<head>
+<meta charset="utf-8">
+<title>Hasty Parking | Free Parking</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/bootstrap-datetimepicker.min.css" rel="stylesheet" media="screen">
+<link href="website/css/styles.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/app.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/dropdown.js"></script>
+<script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+</head>
+<body>
+<header>
+  <div class="container-fluid">
+    <div class="col-md-12">
+      <nav class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Mobile Menu</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+          <a class="navbar-brand logo text-uppercase" href="/website/index"><b>Hasty</b>Parking</a> </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+       <!--    <form class="navbar-form navbar-left">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Find your space...">
+              <span class="input-group-btn">
+              <button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>
+              </span> </div>
+          </form> -->
+          <ul class="nav navbar-nav navbar-right" ng-controller="dropdown_ctrl">  
+            <li><a href="/website/index">Book Parking</a></li>
+            <li><a href="/website/rentspace">Rent Your Space</a></li>
+            <li class="active"><a href="/website/freeparking">Free Parking</a></li>
+            <% include ./partials/headerUserProfile %>
+          </ul>
+        </div>
+        <!-- /.navbar-collapse --> 
+      </nav>
+    </div>
+  </div>
+</header>
+  <form action="/website/payment_with_card" method="post">
+  <script
+   src="https://checkout.stripe.com/checkout.js"
+   class= "stripe-button"
+   data-key ="pk_test_Gww8NXPxrdRMFK1Xd1NRqSg1"
+   data-amount=""
+   data-name ="payment details"
+   data-description ="payment through stripe"
+   data-locale = "auto"
+   data-currency = "usd"
+   >
+  </script>
+  <input type="hidden" name="chargeAmount" value="{{totalamount}}">
+  </form>
+<!-- Footer File Import Link -->
+<% include ./partials/footer %>
+<!-- Footer Ends -->
+<!-- Bootstrap --> 
+<script src="website/js/jquery-2.1.1.min.js"></script> 
+<script src="website/js/bootstrap.min.js"></script> 
+</body>
+</html>

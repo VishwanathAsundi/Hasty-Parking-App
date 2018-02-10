@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-controller="spacedetails" ng-init ="getDetails();">
+<head>
+<meta charset="utf-8">
+<title>Hasty Parking | Space Booking</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/bootstrap-datetimepicker.min.css" rel="stylesheet" media="screen">
+<link href="website/css/styles.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link href="website/css/animate.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+<script src="website/js/jquery-2.1.1.min.js"></script>
+<script src="website/js/bootstrap-datetimepicker.min.js"></script>
+<script src="website/js/bootstrap.min.js"></script>
+<script src="website/js/owl.carousel.min.js"></script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/app.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/dropdown.js"></script>
+<script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+
+<script type="text/javascript">
+app.controller('spacedetails',['$scope','$http',function($scope,$http)
+{
+     $scope.getDetails = function()
+          {
+            var token = localStorage.getItem("token"); 
+            console.log("Token"+token);
+
+            console.log('get Details');
+              $http({
+                  method  : 'POST',
+                  url     : __appurl + "website/cardDetails",
+                  data    : {token:token},
+                  headers : { 'Content-Type': 'application/json' }  
+              })
+              .success(function(data)
+              {
+                console.log('called cardDetails');
+                if(data.status)
+                {
+                  console.log(data);
+                  $scope.cardDetails=data.cardDetails;
+                  console.log($scope.cardDetails);
+                }
+
+              }); 
+
+        },
+
+        $scope.booking=function(PlaceId)
+        {   
+                var token = localStorage.getItem("token"); 
+                console.log("Token"+token);
+                console.log('called booking in ajax');
+                console.log(PlaceId+' '+$scope.vehicleNumber+' '+$scope.vehicleInsuranceNumber+' '+$scope.vehicleModel);
+             $http({
+                method  : 'POST',
+                url     : __appurl + "website/booking",
+                data    : {token:token,PlaceId:PlaceId,vehicle_number:$scope.vehicleNumber,insurance_number:$scope.vehicleInsuranceNumber,model_number:$scope.vehicleModel},
+                headers : { 'Content-Type': 'application/json' }  
+            })
+            .success(function(data)
+             {
+              console.log(data);
+                if(data.status)
+                {
+                  console.log('Order id-->'+data.orderId);
+                  $scope.orderId=data.orderId;
+//                  window.location='paymentsuccessful';
+                }
+
+             }) 
+
+        },
+        $scope.callpayment=function()
+        {   
+            
+            console.log('called payment');
+            $http({
+                  method  : 'POST',
+                  url     : __appurl + "website/payment",
+                  data    : {status:"1"},
+                  headers : { 'Content-Type': 'application/json' }  
+              })
+              .success(function(data)
+              {
+                console.log(data);
+                if(data.status)
+                {
+
+                }
+
+              });
+        },
+        $scope.clickVehicle=function(vehicleNumber,vehicleInsuranceNumber,vehicelModel){
+
+          console.log(vehicleNumber+' '+vehicleInsuranceNumber+' '+vehicelModel);
+          $scope.vehicleNumber=vehicleNumber;
+          $scope.vehicleInsuranceNumber=vehicleInsuranceNumber;
+          $scope.vehicleModel=vehicelModel;
+        },
+          $scope.clickCard=function(customerId,cardNumber,expMonth,expYear){
+            console.log('clickcard');
+            console.log(customerId+' '+cardNumber+' '+expMonth+' '+expYear);
+            $scope.customerId=customerId;
+            $scope.cardNumber=cardNumber;
+            $scope.expMonth=expMonth;
+            $scope.expYear=expYear;
+            $scope.customerId=customerId;
+        },
+        $scope.extend_payment=function()
+        {
+            console.log('called payment');
+            console.log('customerId'+$scope.customerId)
+            $http({
+                  method  : 'POST',
+                  url     : __appurl + "website/extend_order_payment",
+                  data    : {customerId:$scope.customerId},
+                  headers : { 'Content-Type': 'application/json' }  
+              })
+              .success(function(data)
+              {
+                console.log(data);
+                if(data.status)
+                {
+                    console.log(data);
+                    window.location.href='paymentsuccessful';
+                }
+                else
+                {
+
+                }
+
+              });
+
+
+        }
+
+}])
+</script>
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+</head>
+
+<body>
+<header>
+  <div class="container-fluid">
+    <div class="col-md-12">
+      <nav class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Mobile Menu</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+          <a class="navbar-brand logo text-uppercase" href="/website/index"><b>Hasty</b>Parking</a> </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <form class="navbar-form navbar-left">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Find your space...">
+              <span class="input-group-btn">
+              <button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>
+              </span> </div>
+          </form>
+          <ul class="nav navbar-nav navbar-right" ng-controller="dropdown_ctrl">  
+            <li class="active"><a href="/website/index">Book Parking</a></li>
+            <li><a href="/website/rentspace">Rent Your Space</a></li>
+            <li><a href="/website/freeparking">Free Parking</a></li>
+           <% include ./partials/headerUserProfile %>
+          </ul>
+        </div>
+        <!-- /.navbar-collapse --> 
+      </nav>
+    </div>
+  </div>
+</header>
+<div class="container-fluid">
+	<h3 class="text-center text-uppercase">Extend Booking Payment</h3>
+  <div class="row">
+    <div class="board">
+    <form class="form-horizontal">
+      <!-- <h2>Welcome to IGHALO!<sup>™</sup></h2>-->
+      <div class="board-inner">
+        <ul class="nav nav-tabs" id="myTab">
+          <div class="liner"></div>
+          <li class="card active"><a href="#" title=""> <span class="round-tabs three"> <i class="fa fa-credit-card"></i> </span> </a> </li>
+        </ul>
+      </div>
+      <div class="tab-content">
+        <div class="tab-pane fade in active" id="add-card">
+          <h4 class="head text-center">Choose Card</h4>
+          <table class="table table-responsive">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Card Number</th>
+                <th>Exp Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="data in cardDetails">
+                <th>
+                  <label class="control control--radio">
+                    <input type="radio" name="card" ng-model="result" id="card{{$index}}" ng-change="clickCard(data.c_Id,data.cardnumber,data.expMonth,data.expYear)" value="{{data1}}">
+                    <div class="control__indicator"></div>
+                  </label>
+                </th>
+                <td><label for="card{{$index}}">xxxx-xxxx-xxxx-{{data.cardnumber}}</label></td>
+                <td><label for="card{{$index}}">{{data.expMonth}}-{{data.expYear}}</label></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="form-group">
+            <div class="text-right">  
+              <a class="btn btn-success" type="submit"  ng-click="extend_payment();" data-toggle="tab">Make payment</a>
+            </div>
+          </div>
+        </div>
+        <div class="clearfix"></div>
+      </div>
+    </form>
+    
+  <form action="/website/payment_with_card" method="post">
+  <script
+   src="https://checkout.stripe.com/checkout.js"
+   class= "stripe-button"
+   data-key ="pk_test_Gww8NXPxrdRMFK1Xd1NRqSg1"
+   data-amount=""
+   data-name ="payment details"
+   data-description ="payment through stripe"
+   data-locale = "auto"
+   data-currency = "usd"
+   >
+  </script>
+  <input type="hidden" name="chargeAmount" value="{{totalamount}}">
+  </form>
+    </div>
+  </div>
+</div>
+<footer>
+	<div class="container-fluid">
+    	<div class="col-md-6 col-sm-6 col-xs-12"><p class="text-left">Copyright &copy; 2017 Hasty Parking</p></div>
+      <div class="col-md-6 col-sm-6 col-xs-12">
+    	  <ul class="text-right social">
+          <li><a href="#">
+            <span class="fa-stack fa-lg">
+              <i class="fa fa-circle fa-stack-2x"></i>
+              <i class="fa fa-facebook fa-stack-1x"></i>
+            </span></a></li>
+          <li><a href="#">
+            <span class="fa-stack fa-lg">
+              <i class="fa fa-circle fa-stack-2x"></i>
+              <i class="fa fa-twitter fa-stack-1x"></i>
+            </span></a></li>
+          <li><a href="#">
+            <span class="fa-stack fa-lg">
+              <i class="fa fa-circle fa-stack-2x"></i>
+              <i class="fa fa-instagram fa-stack-1x"></i>
+            </span>
+            </a></li>
+          <li><a href="#">
+            <span class="fa-stack fa-lg">
+              <i class="fa fa-circle fa-stack-2x"></i>
+              <i class="fa fa-google-plus fa-stack-1x"></i>
+            </span>
+            </a></li>
+        </ul>
+        </div>
+    </div>
+</footer>
+<!-- Bootstrap --> 
+<script src="js/jquery-2.1.1.min.js"></script> 
+<script src="js/lightbox-plus-jquery.min.js"></script> 
+<script src="js/bootstrap-datetimepicker.min.js"></script> 
+<script src="js/bootstrap.min.js"></script> 
+<script type="text/javascript">
+        $(function() {              
+           // Bootstrap DateTimePicker v4
+           $('#exp_date').datetimepicker({
+								 format: 'mm-yyyy',
+                startView: 'decade',
+                minView: 'year',
+                autoclose: true
+           });
+        });      
+    </script>
+</body>
+</html>

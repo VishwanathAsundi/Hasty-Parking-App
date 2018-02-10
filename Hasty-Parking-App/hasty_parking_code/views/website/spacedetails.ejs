@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-controller="spacedetails" ng-init ="getDetails();">
+<head>
+<meta charset="utf-8">
+<title>Hasty Parking | Space Details page</title>
+<!-- Bootstrap -->
+<link href="website/css/bootstrap.min.css" rel="stylesheet">
+<link href="website/css/bootstrap-datetimepicker.min.css" rel="stylesheet" media="screen">
+<link href="website/css/styles.css" rel="stylesheet">
+<link href="website/css/responsive.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="website/css/lightbox.min.css">
+<link rel="stylesheet" href="website/css/owl.carousel.min.css">
+<link rel="stylesheet" href="website/css/owl.theme.default.min.css">
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+<script type="text/javascript" src="website/js/angularjs/default/angular.min.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/app.js"></script>
+<script type="text/javascript" src="website/js/angularjs/webjs/designer/dropdown.js"></script>
+<link href="website/css/alert_plug.css" rel="stylesheet">
+<script src="website/js/alert_plug.js"></script>
+<script>
+
+ function myMap() 
+    {
+            app.controller('spacedetails',['$scope','$http',function($scope,$http){
+            $scope.getDetails = function()
+          {
+       
+
+            console.log('get Details');
+
+             $http({
+                method  : 'POST',
+                url     : __appurl + "website/getparkingdetails",
+                data    : {status:"1"},
+                headers : { 'Content-Type': 'application/json' }  
+            })
+            .success(function(data) { 
+
+                //console.log('startdate-->'+data.startdate);
+                console.log('testing'+ data.Searched_details[0]);
+        
+            console.log(data.Searched_details[0].title);
+               $scope.getdetails = data.Searched_details[0];
+               $scope.startdate = data.startdate;
+               $scope.enddate = data.enddate;
+               $scope.totalhours = data.duration;
+               $scope.totalamount = data.amount;
+               console.log('duration-->'+$scope.totalhours+' totalamount'+$scope.totalamount);
+
+               console.log('get details-->'+$scope.getdetails.title);
+               console.log($scope.startdate);
+               console.log($scope.enddate);
+
+              var map;
+              var bounds = new google.maps.LatLngBounds();
+              var mapOptions = {
+                  mapTypeId: 'roadmap'
+              };
+                        
+              map = new google.maps.Map(document.getElementById("googleMap"), mapOptions);
+              map.setTilt(50);
+        
+              var infoWindow = new google.maps.InfoWindow(), marker;
+            
+                  var pinIcon = new google.maps.MarkerImage(
+                  "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|FF0000",
+                  null, /* size is determined at runtime */
+                  null, /* origin is 0,0 */
+                  null, /* anchor is bottom center of the scaled image */
+                  new google.maps.Size(40, 60)
+                    ); 
+
+
+                var position = new google.maps.LatLng(data.Searched_details[0].latlong[0],data.Searched_details[0].latlong[1]);
+                bounds.extend(position);
+                marker = new google.maps.Marker({
+                  position: position,
+                  map: map
+                });
+              
+                // Add info window to marker    
+                google.maps.event.addListener(marker, 'click', (function(marker) {
+                    return function() {
+                        
+                        infoWindow.open(map, marker);
+                    }
+                })(marker));
+
+                // Center the map to fit all markers on the screen
+                map.fitBounds(bounds);
+              
+
+              // Set zoom level
+              var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+                  this.setZoom(18);
+                  google.maps.event.removeListener(boundsListener);
+              })
+            
+            });
+        }         
+
+          
+        }]);
+          
+    }
+            
+  
+</script>
+</head>
+
+<body>
+<header>
+ <div class="container-fluid">
+    <div class="col-md-12">
+      <nav class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Mobile Menu</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+          <a class="navbar-brand logo text-uppercase" href="/website/index"><b>Hasty</b>Parking</a> </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+     
+          <ul class="nav navbar-nav navbar-right" ng-controller="dropdown_ctrl">  
+            <li class="active"><a href="/website/index">Book Parking</a></li>
+            <li><a href="/website/rentspace">Rent Your Space</a></li>
+            <li><a href="/website/freeparking">Free Parking</a></li>
+            <% include ./partials/headerUserProfile %>
+          </ul>
+        </div>
+        <!-- /.navbar-collapse --> 
+      </nav>
+    </div>
+  </div>
+</header>
+<ul class="sub-menu">
+  <li><a href="/website/rentspace">Add Spaces</a></li>
+  <li><a href="/website/myspacelist">My Spaces</a></li>
+  <li><a href="/website/receivedbookings">Received Booking</a></li>
+  <li><a href="/website/mybooking">My Bookings</a></li>
+</ul>
+
+<div class="container-fluid">
+  <h3>{{getdetails.title}}</h3>
+  <p class="text-muted">{{getdetails.location}}</p>
+  <div id="googleMap" style="width:100%;height:200px;">
+
+  </div>
+  <div class="row">
+    <div class="col-sm-8">
+      <div class="card">
+        <div class="card-block">
+          <h4 class="card-title">Summary</h4>
+          <div class="col-sm-3">
+            <div class="panel panel-success">
+              <div class="panel-heading"><strong>Parking</strong></div>
+              <div class="panel-body"> {{getdetails.parking_type}}</div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-warning">
+              <div class="panel-heading"><strong>Aminities</strong></div>
+              <div class="panel-body"> {{getdetails.amenties}}</div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-info">
+              <div class="panel-heading"><strong>Type</strong></div>
+              <div class="panel-body">{{getdetails.owner_type}}</div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="panel panel-danger">
+              <div class="panel-heading"><strong>Space</strong></div>
+              <div class="panel-body">{{getdetails.space_type}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-block">
+          <h4 class="card-title">Description</h4>
+          <p>{{getdetails.description}}</p>
+        </div>
+      </div>
+     
+    </div>
+    <div class="col-sm-4">
+      <div class="card reserv-details">
+        <div class="card-block">
+          <h4 class="card-title bg-primary radius text-center">Reservation Details</h4>
+          <ul class="list-group">
+            <li class="list-group-item"> From<span class="pull-right">{{startdate}}</span> </li>
+            <li class="list-group-item"> To<span class="pull-right">{{enddate}}</span> </li>
+            <li class="list-group-item"> Duration<span class="pull-right">{{totalhours}}</span> </li>
+            <li class="list-group-item"> Price<span class="pull-right"><i class="fa fa-dollar"></i> {{totalamount}}</span> </li>
+            <div id="date-change-form" style="display:none">
+              <li class="list-group-item">
+                <div class="form-group">
+                	<label for="sdt">Start Date and Time</label>
+                  <div class="input-group date form_datetime" data-date="2017-03-01T05:00:07Z" data-date-format="dd MM yyyy - HH:ii p" data-link-field="sdt">
+                    <input class="form-control" size="10" type="text" value="" readonly placeholder="dd:mm:yy - hh:mm: p">
+                    <span class="input-group-addon"><i class="fa fa-calendar"></i></span> </div>
+                  <input type="hidden" id="sdt" value="" />
+                </div>
+              </li>
+              <li class="list-group-item">
+                <div class="form-group">
+                	<label for="edt">End Date and Time</label>
+                  <div class="input-group date form_datetime" data-date="2017-03-01T05:00:07Z" data-date-format="dd MM yyyy - HH:ii p" data-link-field="edt">
+                    <input class="form-control" size="10" type="text" value="" readonly placeholder="dd:mm:yy - hh:mm: p">
+                    <span class="input-group-addon"><i class="fa fa-calendar"></i></span> </div>
+                  <input type="hidden" id="edt" value="" />
+                </div>
+              </li>
+              <li class="list-group-item">
+                <h4 class="price">Total Price: <span><i class="fa fa-dollar"></i> 73.50</span></h4>
+              </li>
+            </div>
+            <li class="list-group-item text-center"> <a href="/website/spacebooking" class="btn btn-block btn-success">Book Now</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Footer File Import Link -->
+<% include ./partials/footer %>
+<!-- Footer Ends -->
+<!-- Bootstrap --> 
+<script src="website/js/jquery-2.1.1.min.js"></script> 
+<script src="website/js/lightbox-plus-jquery.min.js"></script> 
+<script src="website/js/bootstrap-datetimepicker.min.js"></script> 
+<script src="website/js/bootstrap.min.js"></script> 
+<script src="website/js/owl.carousel.min.js"></script>
+<script type="text/javascript">
+	$('.form_datetime').datetimepicker({
+		weekStart: 1,
+		todayBtn: 1,
+		autoclose: 1,
+		todayHighlight: 1,
+		startView: 2,
+		forceParse: 0,
+		showMeridian: 1
+	});
+</script>
+<script type="text/javascript">
+	$('.change-date').click(function(){
+		$('#date-change-form').slideDown("slow");
+		$('.change-date').css("display","none");
+	});
+	$('.owl-carousel').owlCarousel({
+    loop:true,
+    margin:10,
+    responsiveClass:true,
+		dots:0,
+    responsive:{
+        0:{
+            items:1,
+            nav:true
+        },
+        600:{
+            items:3,
+            nav:false
+        },
+        1000:{
+            items:5,
+            nav:true,
+            loop:false
+        }
+    }
+})
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6UApfqVf745fpHBgqQTbie7m9GaYqX-I&callback=myMap&libraries=places"></script>
+</body>
+</html>
